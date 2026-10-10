@@ -1,0 +1,3 @@
+[build]
+  command = "echo 'Publishing checked-in Flutter web bundle'"
+  publish = "dist"

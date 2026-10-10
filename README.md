@@ -11,8 +11,10 @@ flutter pub get
 flutter build web --release --dart-define=API_BASE_URLS=https://backendsai.netlify.app/api/v1 --dart-define=REQUIRE_HTTPS=true
 ```
 
-Deploy the contents of `build/web` to Netlify. The `web/_redirects` rule keeps
-Flutter client-side routes working on refresh.
+The Netlify site publishes the checked-in `dist/` bundle. To refresh it after
+changing frontend code, run the build command above and copy the contents of
+`build/web` into `dist/`, then commit and push. The SPA fallback in
+`dist/_redirects` keeps Flutter routes working on refresh.
 
 The API base URL is public client configuration. Never add backend credentials,
 database credentials, or provider secrets to this repository or to Dart defines.
