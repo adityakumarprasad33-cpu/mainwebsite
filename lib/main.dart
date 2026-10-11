@@ -19,6 +19,8 @@ import 'package:citizen_app/features/iam/presentation/screens/profile_screen.dar
 import 'package:citizen_app/features/iam/presentation/screens/register_screen.dart';
 import 'package:citizen_app/features/notifications/presentation/screens/notification_center_screen.dart';
 import 'package:citizen_app/features/splash/presentation/screens/splash_screen.dart';
+import 'package:citizen_app/features/website/presentation/website_root_router.dart';
+import 'package:citizen_app/features/website/presentation/website_download_page.dart';
 import 'package:citizen_app/platform/bootstrap/protected_route_guard.dart';
 import 'package:citizen_app/platform/bootstrap/network_config_screen.dart';
 import 'package:citizen_app/platform/localization/language_provider.dart';
@@ -199,21 +201,53 @@ class SamadhanApp extends StatelessWidget {
             };
             return child!;
           },
-          initialRoute: '/splash',
+          // Flutter Web opens requested pages directly; native builds retain
+          // their existing splash-first startup.
+          initialRoute: kIsWeb ? null : '/splash',
           routes: {
             '/network-settings': (context) => const NetworkConfigScreen(),
             '/splash': (context) => const SplashScreen(),
             '/login': (context) => const LoginScreen(),
             '/register': (context) => const RegisterScreen(),
-            '/': (context) => ProtectedRouteGuard(
-              allowedRoles: {
-                UserRoleEnum.citizen,
-                UserRoleEnum.nodalOfficer,
-                UserRoleEnum.departmentAdmin,
-                UserRoleEnum.superAdmin,
-              },
-              child: CitizenDashboardScreen(),
-            ),
+            '/download': (context) => const WebsiteDownloadPage(),
+            '/': (context) => kIsWeb
+                ? WebsiteRootRouter(
+                    authenticatedBuilder: (context, result) {
+                      if (result.role == UserRoleEnum.nodalOfficer) {
+                        return ProtectedRouteGuard(
+                          allowedRoles: const {
+                            UserRoleEnum.nodalOfficer,
+                            UserRoleEnum.departmentAdmin,
+                            UserRoleEnum.superAdmin,
+                          },
+                          child: const OfficerDashboardScreen(),
+                        );
+                      }
+                      if (result.role == UserRoleEnum.departmentAdmin ||
+                          result.role == UserRoleEnum.superAdmin) {
+                        return ProtectedRouteGuard(
+                          allowedRoles: const {
+                            UserRoleEnum.departmentAdmin,
+                            UserRoleEnum.superAdmin,
+                          },
+                          child: const AdminDashboardScreen(),
+                        );
+                      }
+                      return ProtectedRouteGuard(
+                        allowedRoles: const {UserRoleEnum.citizen},
+                        child: const CitizenDashboardScreen(),
+                      );
+                    },
+                  )
+                : ProtectedRouteGuard(
+                    allowedRoles: {
+                      UserRoleEnum.citizen,
+                      UserRoleEnum.nodalOfficer,
+                      UserRoleEnum.departmentAdmin,
+                      UserRoleEnum.superAdmin,
+                    },
+                    child: CitizenDashboardScreen(),
+                  ),
             '/officer-dashboard': (context) => ProtectedRouteGuard(
               allowedRoles: {
                 UserRoleEnum.nodalOfficer,
