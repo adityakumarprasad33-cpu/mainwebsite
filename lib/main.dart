@@ -30,6 +30,7 @@ import 'package:citizen_app/platform/localization/language_provider.dart';
 import 'package:citizen_app/platform/api/api_client.dart';
 import 'package:citizen_app/platform/session/session_manager.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -103,6 +104,11 @@ Future<void> _initializeFirebase() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+    if (kIsWeb) {
+      // Keep the Firebase identity across reloads and browser restarts so the
+      // landing page can restore the app session before opening a dashboard.
+      await FirebaseAuth.instance.setPersistence(Persistence.LOCAL);
+    }
     debugPrint('[Main] Firebase initialized successfully');
   } catch (error, stack) {
     debugPrint('[Main] Firebase initialization failed: $error');

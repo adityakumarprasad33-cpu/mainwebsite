@@ -117,24 +117,43 @@ class FirebaseService {
     final token = await user.getIdToken();
     if (token == null || token.isEmpty) return false;
     final email = user.email ?? '';
-    final backendUser = await _syncWithBackend(
-      uid: user.uid,
-      email: email,
-      idToken: token,
-      displayName: user.displayName,
-      phone: user.phoneNumber,
-    );
-    await SessionManager.instance.establishSession(
-      token: token,
-      id: user.uid,
-      email: email,
-      userRole: _roleFromBackend(backendUser['roleId'] as String?),
-      name: backendUser['displayName'] as String? ?? user.displayName,
-      userStateCode: backendUser['stateCode'] as String?,
-      userDistrict: backendUser['district'] as String?,
-      userPhone: backendUser['phone'] as String? ?? user.phoneNumber,
-      userPermissions: _permissionSet(backendUser['permissions']),
-    );
+    try {
+      final backendUser = await _syncWithBackend(
+        uid: user.uid,
+        email: email,
+        idToken: token,
+        displayName: user.displayName,
+        phone: user.phoneNumber,
+      );
+      await SessionManager.instance.establishSession(
+        token: token,
+        id: user.uid,
+        email: email,
+        userRole: _roleFromBackend(backendUser['roleId'] as String?),
+        name: backendUser['displayName'] as String? ?? user.displayName,
+        userStateCode: backendUser['stateCode'] as String?,
+        userDistrict: backendUser['district'] as String?,
+        userPhone: backendUser['phone'] as String? ?? user.phoneNumber,
+        userPermissions: _permissionSet(backendUser['permissions']),
+      );
+    } catch (_) {
+      // Firebase can still hold a valid signed-in identity when browser-local
+      // app metadata or the profile-sync endpoint is temporarily unavailable.
+      // Restore only the role/permissions explicitly present in signed claims;
+      // API authorization remains enforced by the backend on every request.
+      debugPrint('[FirebaseService] Restoring dashboard from Firebase claims.');
+      final claims = (await user.getIdTokenResult()).claims ?? const {};
+      final roleId = claims['roleId'] ?? claims['role'] ?? claims['userRole'];
+      await SessionManager.instance.establishSession(
+        token: token,
+        id: user.uid,
+        email: email,
+        userRole: _roleFromBackend(roleId is String ? roleId : null),
+        name: user.displayName,
+        userPhone: user.phoneNumber,
+        userPermissions: _permissionSet(claims['permissions']),
+      );
+    }
     return true;
   }
 
@@ -236,9 +255,14 @@ class FirebaseService {
   }
 
   UserRoleEnum _roleFromBackend(String? roleId) {
-    final normalized = (roleId ?? '').toLowerCase();
+    final normalized = (roleId ?? '').toLowerCase().replaceAll(
+      RegExp(r'[^a-z]'),
+      '',
+    );
     if (normalized.contains('superadmin')) return UserRoleEnum.superAdmin;
-    if (normalized.contains('departmentadmin') || normalized == 'admin') {
+    if (normalized.contains('departmentadmin') ||
+        normalized == 'admin' ||
+        normalized == 'deptadmin') {
       return UserRoleEnum.departmentAdmin;
     }
     if (normalized.contains('officer') || normalized.contains('official')) {
