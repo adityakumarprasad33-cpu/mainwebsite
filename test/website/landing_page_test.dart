@@ -89,6 +89,9 @@ void main() {
     expect(find.text('Your Voice.\nBetter Communities.'), findsOneWidget);
     expect(find.text('Report an Issue'), findsOneWidget);
     expect(find.text('What is SamadhanAI?'), findsOneWidget);
+    expect(find.text('Citizen services & updates'), findsOneWidget);
+    expect(find.text('What’s new'), findsOneWidget);
+    expect(find.text('What’s happening'), findsOneWidget);
 
     const question = 'What kinds of issues can I report?';
     await tester.ensureVisible(find.text(question));

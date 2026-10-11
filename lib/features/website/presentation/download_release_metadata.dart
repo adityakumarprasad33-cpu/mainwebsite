@@ -24,7 +24,9 @@ class DownloadReleaseMetadata {
     versionName: String.fromEnvironment('SAMADHANAI_ANDROID_VERSION_NAME'),
     versionCode: String.fromEnvironment('SAMADHANAI_ANDROID_VERSION_CODE'),
     fileSizeBytes: String.fromEnvironment('SAMADHANAI_ANDROID_FILE_SIZE_BYTES'),
-    minimumAndroidApi: String.fromEnvironment('SAMADHANAI_ANDROID_MINIMUM_API'),
+    minimumAndroidApi: String.fromEnvironment(
+      'SAMADHANAI_ANDROID_MINIMUM_API',
+    ),
     releaseDate: String.fromEnvironment('SAMADHANAI_ANDROID_RELEASE_DATE'),
     sha256: String.fromEnvironment('SAMADHANAI_ANDROID_SHA256'),
     signingCertificateSha256: String.fromEnvironment(

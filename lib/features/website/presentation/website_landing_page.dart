@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:citizen_app/features/website/presentation/download_release_metadata.dart';
 import 'package:flutter/material.dart';
 
 /// Public, web-only SamadhanAI product page.
@@ -14,6 +15,7 @@ class WebsiteLandingPage extends StatefulWidget {
 class _WebsiteLandingPageState extends State<WebsiteLandingPage> {
   final _scrollController = ScrollController();
   final GlobalKey _howKey = GlobalKey();
+  final GlobalKey _updatesKey = GlobalKey();
   final GlobalKey _capabilitiesKey = GlobalKey();
   final GlobalKey _faqKey = GlobalKey();
   bool _scrolled = false;
@@ -107,7 +109,7 @@ class _WebsiteLandingPageState extends State<WebsiteLandingPage> {
               children: [
                 SingleChildScrollView(
                   controller: _scrollController,
-                  padding: const EdgeInsets.only(top: 84),
+                  padding: const EdgeInsets.only(top: 52),
                   child: Column(
                     children: [
                       const _CivicMessageStrip(),
@@ -116,6 +118,13 @@ class _WebsiteLandingPageState extends State<WebsiteLandingPage> {
                         scrollController: _scrollController,
                         onStart: () => _go('/register'),
                         onHow: () => _scrollTo(_howKey),
+                      ),
+                      _PublicUpdatesSection(
+                        key: _updatesKey,
+                        narrow: narrow,
+                        onReport: () => _go('/register'),
+                        onTrack: () => _go('/login'),
+                        onDownload: () => _go('/download'),
                       ),
                       _HowSection(key: _howKey, narrow: narrow),
                       _CapabilitiesSection(
@@ -149,6 +158,7 @@ class _WebsiteLandingPageState extends State<WebsiteLandingPage> {
                     ),
                   ),
                   onHow: () => _scrollTo(_howKey),
+                  onUpdates: () => _scrollTo(_updatesKey),
                   onCapabilities: () => _scrollTo(_capabilitiesKey),
                   onFaq: () => _scrollTo(_faqKey),
                   onSignIn: () => _go('/login'),
@@ -191,6 +201,10 @@ class _WebsiteLandingPageState extends State<WebsiteLandingPage> {
                                       ),
                                     );
                                   },
+                                ),
+                                _MobileMenuItem(
+                                  label: 'What’s new',
+                                  onPressed: () => _scrollTo(_updatesKey),
                                 ),
                                 _MobileMenuItem(
                                   label: 'How it works',
@@ -260,7 +274,7 @@ class _AnnouncementBar extends StatelessWidget {
     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
     child: Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 1220),
+        constraints: const BoxConstraints(maxWidth: 1480),
         child: LayoutBuilder(
           builder: (context, constraints) => Row(
             children: [
@@ -311,7 +325,7 @@ class _CivicMessageStrip extends StatelessWidget {
     ),
     child: Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 1220),
+        constraints: const BoxConstraints(maxWidth: 1480),
         child: LayoutBuilder(
           builder: (context, constraints) => Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -358,6 +372,7 @@ class _NavigationBar extends StatelessWidget {
     required this.onMenu,
     required this.onHome,
     required this.onHow,
+    required this.onUpdates,
     required this.onCapabilities,
     required this.onFaq,
     required this.onSignIn,
@@ -371,6 +386,7 @@ class _NavigationBar extends StatelessWidget {
   final VoidCallback onMenu;
   final VoidCallback onHome;
   final VoidCallback onHow;
+  final VoidCallback onUpdates;
   final VoidCallback onCapabilities;
   final VoidCallback onFaq;
   final VoidCallback onSignIn;
@@ -404,7 +420,7 @@ class _NavigationBar extends StatelessWidget {
           ),
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1220),
+              constraints: const BoxConstraints(maxWidth: 1480),
               child: Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -424,6 +440,7 @@ class _NavigationBar extends StatelessWidget {
                     if (!narrow) ...[
                       _NavText('Home', onHome),
                       _NavText('How It Works', onHow),
+                      _NavText('What’s New', onUpdates),
                       _NavText('Features', onCapabilities),
                       _NavText('FAQ', onFaq),
                       _NavText('Download App', onDownload),
@@ -489,7 +506,7 @@ class _NavText extends StatelessWidget {
     onPressed: onPressed,
     style: TextButton.styleFrom(
       foregroundColor: _LandingColors.muted,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 12),
     ),
     child: Text(label),
   );
@@ -1178,6 +1195,320 @@ class _PreviewTile extends StatelessWidget {
   );
 }
 
+class _PublicUpdatesSection extends StatelessWidget {
+  const _PublicUpdatesSection({
+    super.key,
+    required this.narrow,
+    required this.onReport,
+    required this.onTrack,
+    required this.onDownload,
+  });
+
+  final bool narrow;
+  final VoidCallback onReport;
+  final VoidCallback onTrack;
+  final VoidCallback onDownload;
+
+  @override
+  Widget build(BuildContext context) {
+    final releaseAvailable = DownloadReleaseMetadata.current.isAndroidAvailable;
+    final updates = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _UpdatesHeading(
+          title: 'What’s new',
+          subtitle: 'SamadhanAI platform updates',
+        ),
+        const SizedBox(height: 10),
+        _UpdateRow(
+          icon: Icons.phone_android_rounded,
+          color: const Color(0xFF149447),
+          title: 'Android app',
+          body: releaseAvailable
+              ? 'A verified release is available on the Download App page.'
+              : 'Release checks are underway. Download links will open after verification and publication.',
+          badge: releaseAvailable ? 'AVAILABLE' : 'IN REVIEW',
+        ),
+        const Divider(height: 1),
+        const _UpdateRow(
+          icon: Icons.assignment_outlined,
+          color: Color(0xFF2878D5),
+          title: 'Report and follow civic issues',
+          body:
+              'Sign in to submit a report and view the status information available to your account.',
+          badge: 'SERVICE INFO',
+        ),
+      ],
+    );
+    final happening = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _UpdatesHeading(
+          title: 'What’s happening',
+          subtitle: 'Public notices and citizen services',
+        ),
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.all(13),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF3F7F8),
+            borderRadius: BorderRadius.circular(11),
+            border: Border.all(color: _LandingColors.line),
+          ),
+          child: const Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.info_outline_rounded,
+                color: _LandingColors.teal,
+                size: 19,
+              ),
+              SizedBox(width: 9),
+              Expanded(
+                child: Text(
+                  'City event and government notice feeds are not connected here yet. For urgent or official updates, use your local authority’s verified channels.',
+                  style: TextStyle(
+                    color: _LandingColors.muted,
+                    fontSize: 11,
+                    height: 1.45,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _ServiceAction(
+              icon: Icons.add_circle_outline,
+              label: 'Report an issue',
+              onTap: onReport,
+            ),
+            _ServiceAction(
+              icon: Icons.track_changes_outlined,
+              label: 'Track a report',
+              onTap: onTrack,
+            ),
+            _ServiceAction(
+              icon: Icons.download_outlined,
+              label: 'Get the app',
+              onTap: onDownload,
+            ),
+          ],
+        ),
+      ],
+    );
+
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFFF4F8F9),
+      child: _ContentWidth(
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: 24,
+            vertical: narrow ? 20 : 24,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.account_balance_outlined,
+                    color: _LandingColors.teal,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 9),
+                  const Expanded(
+                    child: Text(
+                      'Citizen services & updates',
+                      style: TextStyle(
+                        color: _LandingColors.ink,
+                        fontSize: 19,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -.3,
+                      ),
+                    ),
+                  ),
+                  if (!narrow) const _OfficialSourceLabel(),
+                ],
+              ),
+              const SizedBox(height: 13),
+              LayoutBuilder(
+                builder: (context, constraints) => constraints.maxWidth < 760
+                    ? Column(
+                        children: [
+                          updates,
+                          const SizedBox(height: 14),
+                          happening,
+                        ],
+                      )
+                    : Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(flex: 6, child: updates),
+                          const SizedBox(width: 22),
+                          Expanded(flex: 5, child: happening),
+                        ],
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _UpdatesHeading extends StatelessWidget {
+  const _UpdatesHeading({required this.title, required this.subtitle});
+  final String title;
+  final String subtitle;
+  @override
+  Widget build(BuildContext context) => Row(
+    crossAxisAlignment: CrossAxisAlignment.end,
+    children: [
+      Text(
+        title,
+        style: const TextStyle(
+          color: _LandingColors.ink,
+          fontWeight: FontWeight.w800,
+          fontSize: 14,
+        ),
+      ),
+      const SizedBox(width: 9),
+      Flexible(
+        child: Text(
+          subtitle,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(color: _LandingColors.muted, fontSize: 10),
+        ),
+      ),
+    ],
+  );
+}
+
+class _OfficialSourceLabel extends StatelessWidget {
+  const _OfficialSourceLabel();
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      border: Border.all(color: _LandingColors.line),
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: const Text(
+      'SamadhanAI information',
+      style: TextStyle(
+        color: _LandingColors.muted,
+        fontSize: 9,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+  );
+}
+
+class _UpdateRow extends StatelessWidget {
+  const _UpdateRow({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.body,
+    required this.badge,
+  });
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String body;
+  final String badge;
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 10),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: .11),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: color, size: 18),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: const TextStyle(
+                        color: _LandingColors.ink,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    badge,
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 8,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: .3,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 3),
+              Text(
+                body,
+                style: const TextStyle(
+                  color: _LandingColors.muted,
+                  fontSize: 10,
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _ServiceAction extends StatelessWidget {
+  const _ServiceAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => OutlinedButton.icon(
+    onPressed: onTap,
+    icon: Icon(icon, size: 15),
+    label: Text(label, style: const TextStyle(fontSize: 10)),
+    style: OutlinedButton.styleFrom(
+      foregroundColor: _LandingColors.teal,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+      side: const BorderSide(color: _LandingColors.line),
+      backgroundColor: Colors.white,
+    ),
+  );
+}
+
 class _HowSection extends StatelessWidget {
   const _HowSection({super.key, required this.narrow});
   final bool narrow;
@@ -1797,7 +2128,7 @@ class _ContentWidth extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Center(
     child: ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 1160),
+      constraints: const BoxConstraints(maxWidth: 1480),
       child: child,
     ),
   );
