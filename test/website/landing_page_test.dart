@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 
 import 'package:citizen_app/features/website/presentation/website_landing_page.dart';
+import 'package:citizen_app/features/website/presentation/website_how_it_works_page.dart';
 import 'package:citizen_app/features/website/presentation/website_root_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -50,6 +51,8 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Your Voice.\nBetter Communities.'), findsOneWidget);
+    expect(find.text('ANNOUNCEMENTS'), findsOneWidget);
+    expect(find.text('Report civic issues with SamadhanAI'), findsOneWidget);
     expect(find.text('Protected dashboard'), findsNothing);
   });
 
@@ -89,9 +92,11 @@ void main() {
     expect(find.text('Your Voice.\nBetter Communities.'), findsOneWidget);
     expect(find.text('Report an Issue'), findsOneWidget);
     expect(find.text('What is SamadhanAI?'), findsOneWidget);
-    expect(find.text('Citizen services & updates'), findsOneWidget);
+    expect(find.text('Citizen Services & Latest Updates'), findsOneWidget);
     expect(find.text('What’s new'), findsOneWidget);
     expect(find.text('What’s happening'), findsOneWidget);
+    expect(find.text('Home'), findsNothing);
+    expect(find.text('What’s New'), findsNothing);
 
     const question = 'What kinds of issues can I report?';
     await tester.ensureVisible(find.text(question));
@@ -111,6 +116,52 @@ void main() {
       ui.Tristate.isFalse,
     );
 
+    tester.view.resetPhysicalSize();
+    tester.view.resetDevicePixelRatio();
+  });
+
+  testWidgets('how it works is a separate page with its own hero and steps', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: const WebsiteHowItWorksPage(),
+        onGenerateRoute: (settings) => MaterialPageRoute<void>(
+          settings: settings,
+          builder: (_) => Scaffold(body: Text('Route ${settings.name}')),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('HOW IT WORKS'), findsOneWidget);
+    expect(find.text('Tell us what needs attention'), findsOneWidget);
+    expect(find.text('Follow updates in your account'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('staff help uses preset private-safe answers without free text', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
+    await tester.pumpWidget(_app());
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Chat with SamadhanAI staff'), findsOneWidget);
+    await tester.tap(find.byTooltip('Chat with SamadhanAI staff'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text(
+        'Preset FAQ only. No AI, account lookup, backend messages, or saved chat. Never enter passwords, OTPs, API keys, access tokens, or private report details.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.byType(TextField), findsNothing);
+    await tester.tap(
+      find.text('Should I enter passwords, OTPs, or API keys here?'),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Never share passwords'), findsOneWidget);
+    expect(tester.takeException(), isNull);
     tester.view.resetPhysicalSize();
     tester.view.resetDevicePixelRatio();
   });

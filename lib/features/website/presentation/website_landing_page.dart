@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:citizen_app/features/website/presentation/download_release_metadata.dart';
+import 'package:citizen_app/features/website/presentation/website_staff_chat_button.dart';
 import 'package:flutter/material.dart';
 
 /// Public, web-only SamadhanAI product page.
@@ -14,7 +15,6 @@ class WebsiteLandingPage extends StatefulWidget {
 
 class _WebsiteLandingPageState extends State<WebsiteLandingPage> {
   final _scrollController = ScrollController();
-  final GlobalKey _howKey = GlobalKey();
   final GlobalKey _updatesKey = GlobalKey();
   final GlobalKey _capabilitiesKey = GlobalKey();
   final GlobalKey _faqKey = GlobalKey();
@@ -103,7 +103,7 @@ class _WebsiteLandingPageState extends State<WebsiteLandingPage> {
       backgroundColor: _LandingColors.paper,
       body: Column(
         children: [
-          const _AnnouncementBar(),
+          _AnnouncementBar(onViewUpdates: () => _scrollTo(_updatesKey)),
           Expanded(
             child: Stack(
               children: [
@@ -117,7 +117,7 @@ class _WebsiteLandingPageState extends State<WebsiteLandingPage> {
                         narrow: narrow,
                         scrollController: _scrollController,
                         onStart: () => _go('/register'),
-                        onHow: () => _scrollTo(_howKey),
+                        onHow: () => _go('/how-it-works'),
                       ),
                       _PublicUpdatesSection(
                         key: _updatesKey,
@@ -126,14 +126,13 @@ class _WebsiteLandingPageState extends State<WebsiteLandingPage> {
                         onTrack: () => _go('/login'),
                         onDownload: () => _go('/download'),
                       ),
-                      _HowSection(key: _howKey, narrow: narrow),
                       _CapabilitiesSection(
                         key: _capabilitiesKey,
                         narrow: narrow,
                       ),
                       _FaqSection(key: _faqKey, narrow: narrow),
                       _Footer(
-                        onHow: () => _scrollTo(_howKey),
+                        onHow: () => _go('/how-it-works'),
                         onCapabilities: () => _scrollTo(_capabilitiesKey),
                         onFaq: () => _scrollTo(_faqKey),
                         onSignIn: () => _go('/login'),
@@ -157,13 +156,17 @@ class _WebsiteLandingPageState extends State<WebsiteLandingPage> {
                       curve: Curves.easeOutCubic,
                     ),
                   ),
-                  onHow: () => _scrollTo(_howKey),
-                  onUpdates: () => _scrollTo(_updatesKey),
+                  onHow: () => _go('/how-it-works'),
                   onCapabilities: () => _scrollTo(_capabilitiesKey),
                   onFaq: () => _scrollTo(_faqKey),
                   onSignIn: () => _go('/login'),
                   onDownload: () => _go('/download'),
                   onStart: () => _go('/register'),
+                ),
+                const Positioned(
+                  right: 22,
+                  bottom: 22,
+                  child: WebsiteStaffChatButton(),
                 ),
                 if (narrow && _menuOpen)
                   Positioned(
@@ -185,30 +188,8 @@ class _WebsiteLandingPageState extends State<WebsiteLandingPage> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 _MobileMenuItem(
-                                  label: 'Home',
-                                  onPressed: () {
-                                    setState(() => _menuOpen = false);
-                                    unawaited(
-                                      _scrollController.animateTo(
-                                        0,
-                                        duration:
-                                            MediaQuery.disableAnimationsOf(
-                                              context,
-                                            )
-                                            ? Duration.zero
-                                            : const Duration(milliseconds: 400),
-                                        curve: Curves.easeOut,
-                                      ),
-                                    );
-                                  },
-                                ),
-                                _MobileMenuItem(
-                                  label: 'What’s new',
-                                  onPressed: () => _scrollTo(_updatesKey),
-                                ),
-                                _MobileMenuItem(
                                   label: 'How it works',
-                                  onPressed: () => _scrollTo(_howKey),
+                                  onPressed: () => _go('/how-it-works'),
                                 ),
                                 _MobileMenuItem(
                                   label: 'Features',
@@ -265,50 +246,104 @@ abstract final class _LandingColors {
 }
 
 class _AnnouncementBar extends StatelessWidget {
-  const _AnnouncementBar();
+  const _AnnouncementBar({required this.onViewUpdates});
+  final VoidCallback onViewUpdates;
 
   @override
-  Widget build(BuildContext context) => Container(
-    width: double.infinity,
-    color: _LandingColors.ink,
-    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-    child: Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 1480),
-        child: LayoutBuilder(
-          builder: (context, constraints) => Row(
+  Widget build(BuildContext context) {
+    final androidReleaseAvailable =
+        DownloadReleaseMetadata.current.isAndroidAvailable;
+    return Container(
+      width: double.infinity,
+      color: _LandingColors.ink,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1600),
+          child: Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 18,
+            runSpacing: 6,
             children: [
-              const Icon(
-                Icons.campaign_rounded,
-                color: Color(0xFFB7F1DD),
-                size: 15,
+              const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.campaign_rounded,
+                    color: Color(0xFFB7F1DD),
+                    size: 15,
+                  ),
+                  SizedBox(width: 7),
+                  Text(
+                    'ANNOUNCEMENTS',
+                    style: TextStyle(
+                      color: Color(0xFFB7F1DD),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: .7,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              const Expanded(
-                child: Text(
-                  'Together for cleaner, safer and more livable communities.',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w500,
+              _AnnouncementItem(
+                text: 'Report civic issues with SamadhanAI',
+                showDivider: true,
+              ),
+              _AnnouncementItem(
+                text: 'Follow available status updates after sign in',
+                showDivider: true,
+              ),
+              _AnnouncementItem(
+                text: androidReleaseAvailable
+                    ? 'Android app download is available'
+                    : 'Android app release is under verification',
+              ),
+              TextButton.icon(
+                onPressed: onViewUpdates,
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFFB7F1DD),
+                  minimumSize: const Size(0, 42),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  textStyle: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
+                icon: const Icon(Icons.arrow_forward_rounded, size: 15),
+                label: const Text('View updates'),
               ),
-              if (constraints.maxWidth > 620) ...[
-                Container(width: 1, height: 13, color: Colors.white24),
-                const SizedBox(width: 14),
-                const Text(
-                  'A civic platform for a stronger tomorrow.',
-                  style: TextStyle(color: Colors.white70, fontSize: 10),
-                ),
-              ],
             ],
           ),
         ),
       ),
-    ),
+    );
+  }
+}
+
+class _AnnouncementItem extends StatelessWidget {
+  const _AnnouncementItem({required this.text, this.showDivider = false});
+  final String text;
+  final bool showDivider;
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      if (showDivider) ...[
+        Container(width: 1, height: 12, color: Colors.white24),
+        const SizedBox(width: 14),
+      ],
+      const Icon(Icons.circle, color: Color(0xFF54D6A5), size: 5),
+      const SizedBox(width: 7),
+      Flexible(
+        child: Text(
+          text,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(color: Colors.white, fontSize: 12),
+        ),
+      ),
+    ],
   );
 }
 
@@ -325,7 +360,7 @@ class _CivicMessageStrip extends StatelessWidget {
     ),
     child: Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 1480),
+        constraints: const BoxConstraints(maxWidth: 1600),
         child: LayoutBuilder(
           builder: (context, constraints) => Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -344,7 +379,7 @@ class _CivicMessageStrip extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: _LandingColors.ink,
-                    fontSize: 11.5,
+                    fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -353,7 +388,7 @@ class _CivicMessageStrip extends StatelessWidget {
                 const SizedBox(width: 22),
                 const Text(
                   '- SamadhanAI',
-                  style: TextStyle(color: _LandingColors.muted, fontSize: 10),
+                  style: TextStyle(color: _LandingColors.muted, fontSize: 12),
                 ),
               ],
             ],
@@ -372,7 +407,6 @@ class _NavigationBar extends StatelessWidget {
     required this.onMenu,
     required this.onHome,
     required this.onHow,
-    required this.onUpdates,
     required this.onCapabilities,
     required this.onFaq,
     required this.onSignIn,
@@ -386,7 +420,6 @@ class _NavigationBar extends StatelessWidget {
   final VoidCallback onMenu;
   final VoidCallback onHome;
   final VoidCallback onHow;
-  final VoidCallback onUpdates;
   final VoidCallback onCapabilities;
   final VoidCallback onFaq;
   final VoidCallback onSignIn;
@@ -420,7 +453,7 @@ class _NavigationBar extends StatelessWidget {
           ),
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1480),
+              constraints: const BoxConstraints(maxWidth: 1600),
               child: Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -438,15 +471,13 @@ class _NavigationBar extends StatelessWidget {
                     ),
                     const Spacer(),
                     if (!narrow) ...[
-                      _NavText('Home', onHome),
                       _NavText('How It Works', onHow),
-                      _NavText('What’s New', onUpdates),
                       _NavText('Features', onCapabilities),
                       _NavText('FAQ', onFaq),
                       _NavText('Download App', onDownload),
-                      const SizedBox(width: 7),
+                      const SizedBox(width: 14),
                       _TextButton(label: 'Sign In', onPressed: onSignIn),
-                      const SizedBox(width: 7),
+                      const SizedBox(width: 10),
                       _PrimaryButton(
                         label: 'Get Started',
                         onPressed: onStart,
@@ -506,9 +537,12 @@ class _NavText extends StatelessWidget {
     onPressed: onPressed,
     style: TextButton.styleFrom(
       foregroundColor: _LandingColors.muted,
-      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 13),
     ),
-    child: Text(label),
+    child: Text(
+      label,
+      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+    ),
   );
 }
 
@@ -793,8 +827,8 @@ class _HeroSection extends StatelessWidget {
     final reducedMotion = MediaQuery.disableAnimationsOf(context);
     final viewport = MediaQuery.sizeOf(context).height;
     final heroHeight = narrow
-        ? (viewport < 920 ? 920.0 : viewport)
-        : (viewport * .45).clamp(390.0, 480.0).toDouble();
+        ? (viewport < 980 ? 980.0 : viewport)
+        : (viewport * .52).clamp(440.0, 520.0).toDouble();
     return SizedBox(
       width: double.infinity,
       height: heroHeight,
@@ -831,7 +865,8 @@ class _HeroSection extends StatelessWidget {
               ),
             ),
           ),
-          Center(
+          Align(
+            alignment: narrow ? Alignment.topCenter : Alignment.center,
             child: _ContentWidth(
               child: Padding(
                 padding: EdgeInsets.symmetric(
@@ -847,7 +882,7 @@ class _HeroSection extends StatelessWidget {
                       narrow: narrow,
                     );
                     final phone = SizedBox(
-                      height: stack ? 328 : heroHeight * .9,
+                      height: stack ? 356 : heroHeight * .9,
                       child: const AspectRatio(
                         aspectRatio: .53,
                         child: _PhoneMockup(),
@@ -943,7 +978,7 @@ class _HeroCopy extends StatelessWidget {
           'Report public issues, follow available status updates, and help build cleaner, safer communities with SamadhanAI.',
           style: TextStyle(
             color: _LandingColors.muted,
-            fontSize: 15,
+            fontSize: 17,
             height: 1.5,
           ),
         ),
@@ -1021,7 +1056,7 @@ class _PhoneMockup extends StatelessWidget {
                             style: TextStyle(
                               color: _LandingColors.ink,
                               fontWeight: FontWeight.w800,
-                              fontSize: 12,
+                              fontSize: 8,
                             ),
                           ),
                           TextSpan(
@@ -1029,7 +1064,7 @@ class _PhoneMockup extends StatelessWidget {
                             style: TextStyle(
                               color: _LandingColors.green,
                               fontWeight: FontWeight.w800,
-                              fontSize: 12,
+                              fontSize: 8,
                             ),
                           ),
                         ],
@@ -1052,7 +1087,7 @@ class _PhoneMockup extends StatelessWidget {
               const Text(
                 'How can we help?',
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 8,
                   height: 1.1,
                   fontWeight: FontWeight.w800,
                   color: _LandingColors.ink,
@@ -1245,7 +1280,7 @@ class _PublicUpdatesSection extends StatelessWidget {
       children: [
         const _UpdatesHeading(
           title: 'What’s happening',
-          subtitle: 'Public notices and citizen services',
+          subtitle: 'Citizen services and local action',
         ),
         const SizedBox(height: 10),
         Container(
@@ -1266,10 +1301,10 @@ class _PublicUpdatesSection extends StatelessWidget {
               SizedBox(width: 9),
               Expanded(
                 child: Text(
-                  'City event and government notice feeds are not connected here yet. For urgent or official updates, use your local authority’s verified channels.',
+                  'Use SamadhanAI to raise local concerns such as missed waste collection, broken streetlights, damaged roads, or water access. For urgent matters, contact your local authority directly.',
                   style: TextStyle(
                     color: _LandingColors.muted,
-                    fontSize: 11,
+                    fontSize: 13,
                     height: 1.45,
                   ),
                 ),
@@ -1324,10 +1359,10 @@ class _PublicUpdatesSection extends StatelessWidget {
                   const SizedBox(width: 9),
                   const Expanded(
                     child: Text(
-                      'Citizen services & updates',
+                      'Citizen Services & Latest Updates',
                       style: TextStyle(
                         color: _LandingColors.ink,
-                        fontSize: 19,
+                        fontSize: 24,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -.3,
                       ),
@@ -1376,7 +1411,7 @@ class _UpdatesHeading extends StatelessWidget {
         style: const TextStyle(
           color: _LandingColors.ink,
           fontWeight: FontWeight.w800,
-          fontSize: 14,
+          fontSize: 15,
         ),
       ),
       const SizedBox(width: 9),
@@ -1384,7 +1419,7 @@ class _UpdatesHeading extends StatelessWidget {
         child: Text(
           subtitle,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(color: _LandingColors.muted, fontSize: 10),
+          style: const TextStyle(color: _LandingColors.muted, fontSize: 12),
         ),
       ),
     ],
@@ -1405,7 +1440,7 @@ class _OfficialSourceLabel extends StatelessWidget {
       'SamadhanAI information',
       style: TextStyle(
         color: _LandingColors.muted,
-        fontSize: 9,
+        fontSize: 11,
         fontWeight: FontWeight.w600,
       ),
     ),
@@ -1452,7 +1487,7 @@ class _UpdateRow extends StatelessWidget {
                       title,
                       style: const TextStyle(
                         color: _LandingColors.ink,
-                        fontSize: 11,
+                        fontSize: 15,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -1462,7 +1497,7 @@ class _UpdateRow extends StatelessWidget {
                     badge,
                     style: TextStyle(
                       color: color,
-                      fontSize: 8,
+                      fontSize: 10,
                       fontWeight: FontWeight.w800,
                       letterSpacing: .3,
                     ),
@@ -1474,7 +1509,7 @@ class _UpdateRow extends StatelessWidget {
                 body,
                 style: const TextStyle(
                   color: _LandingColors.muted,
-                  fontSize: 10,
+                  fontSize: 12,
                   height: 1.4,
                 ),
               ),
@@ -1499,7 +1534,7 @@ class _ServiceAction extends StatelessWidget {
   Widget build(BuildContext context) => OutlinedButton.icon(
     onPressed: onTap,
     icon: Icon(icon, size: 15),
-    label: Text(label, style: const TextStyle(fontSize: 10)),
+    label: Text(label, style: const TextStyle(fontSize: 13)),
     style: OutlinedButton.styleFrom(
       foregroundColor: _LandingColors.teal,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
@@ -1663,7 +1698,7 @@ class _StepText extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
         style: const TextStyle(
           color: _LandingColors.ink,
-          fontSize: 12,
+          fontSize: 14,
           fontWeight: FontWeight.w800,
         ),
       ),
@@ -1674,7 +1709,7 @@ class _StepText extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
         style: const TextStyle(
           color: _LandingColors.muted,
-          fontSize: 10.5,
+          fontSize: 12,
           height: 1.35,
         ),
       ),
@@ -1809,7 +1844,7 @@ class _CapabilityItem extends StatelessWidget {
                 style: const TextStyle(
                   color: _LandingColors.ink,
                   fontWeight: FontWeight.w800,
-                  fontSize: 11.5,
+                  fontSize: 16,
                 ),
               ),
               const SizedBox(height: 4),
@@ -1820,7 +1855,7 @@ class _CapabilityItem extends StatelessWidget {
                 style: const TextStyle(
                   color: _LandingColors.muted,
                   height: 1.25,
-                  fontSize: 9.5,
+                  fontSize: 14,
                 ),
               ),
             ],
@@ -1969,7 +2004,7 @@ class _FaqItemState extends State<_FaqItem> {
                           style: const TextStyle(
                             color: _LandingColors.ink,
                             fontWeight: FontWeight.w600,
-                            fontSize: 11.5,
+                            fontSize: 13,
                           ),
                         ),
                       ),
@@ -1997,7 +2032,7 @@ class _FaqItemState extends State<_FaqItem> {
                     widget.answer,
                     style: const TextStyle(
                       color: _LandingColors.muted,
-                      fontSize: 11,
+                      fontSize: 13,
                       height: 1.65,
                     ),
                   ),
@@ -2055,7 +2090,7 @@ class _Footer extends StatelessWidget {
                         style: TextStyle(
                           color: Color(0xFFBBC8C5),
                           height: 1.6,
-                          fontSize: 13,
+                          fontSize: 14,
                         ),
                       ),
                     ),
@@ -2128,7 +2163,7 @@ class _ContentWidth extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Center(
     child: ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 1480),
+      constraints: const BoxConstraints(maxWidth: 1600),
       child: child,
     ),
   );

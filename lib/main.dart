@@ -20,7 +20,9 @@ import 'package:citizen_app/features/iam/presentation/screens/register_screen.da
 import 'package:citizen_app/features/notifications/presentation/screens/notification_center_screen.dart';
 import 'package:citizen_app/features/splash/presentation/screens/splash_screen.dart';
 import 'package:citizen_app/features/website/presentation/website_root_router.dart';
+import 'package:citizen_app/features/website/presentation/website_how_it_works_page.dart';
 import 'package:citizen_app/features/website/presentation/website_download_page.dart';
+import 'package:citizen_app/platform/bootstrap/bootstrap_manager.dart';
 import 'package:citizen_app/platform/bootstrap/protected_route_guard.dart';
 import 'package:citizen_app/platform/bootstrap/network_config_screen.dart';
 import 'package:citizen_app/platform/localization/language_provider.dart';
@@ -54,23 +56,21 @@ class CrashDetails {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Apply a device override (if saved) before creating any API clients.
-  await ApiClientConfig.initialize();
-  try {
-    debugPrint(ApiClientConfig.debugInfo);
-  } catch (e) {
-    debugPrint('[Main] Failed to print API config debug info: $e');
+  // A public website page does not need backend readiness to render. Start
+  // endpoint discovery in the background on Web so a CORS/API outage cannot
+  // leave the whole site on a blank startup screen.
+  if (kIsWeb) {
+    unawaited(_initializeWebApiConfig());
+  } else {
+    await ApiClientConfig.initialize();
   }
 
-  // Initialize Firebase with error handling
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    debugPrint('[Main] Firebase initialized successfully');
-  } catch (e, stack) {
-    debugPrint('[Main] Firebase initialization failed: $e');
-    debugPrint('[Main] Stack: $stack');
+  // Keep the public web page responsive while Firebase warms up. Native
+  // entry points still wait for Firebase before opening the app.
+  if (kIsWeb) {
+    unawaited(_initializeFirebase());
+  } else {
+    await _initializeFirebase();
   }
 
   // Setup crash handlers
@@ -89,6 +89,28 @@ void main() async {
   };
 
   runApp(AppRestart(child: const SamadhanApp()));
+}
+
+Future<void> _initializeWebApiConfig() async {
+  try {
+    await ApiClientConfig.initialize();
+    debugPrint(ApiClientConfig.debugInfo);
+  } catch (error, stack) {
+    debugPrint('[Main] Web API endpoint discovery failed: $error');
+    debugPrintStack(stackTrace: stack);
+  }
+}
+
+Future<void> _initializeFirebase() async {
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    debugPrint('[Main] Firebase initialized successfully');
+  } catch (error, stack) {
+    debugPrint('[Main] Firebase initialization failed: $error');
+    debugPrintStack(stackTrace: stack);
+  }
 }
 
 /// Restarts the app subtree without calling runApp again from inside a frame.
@@ -201,8 +223,8 @@ class SamadhanApp extends StatelessWidget {
             };
             return child!;
           },
-          // Flutter Web opens requested pages directly; native builds retain
-          // their existing splash-first startup.
+          // Flutter Web opens the requested deep link (normally '/') directly;
+          // Android/iOS retain the existing splash-first startup.
           initialRoute: kIsWeb ? null : '/splash',
           routes: {
             '/network-settings': (context) => const NetworkConfigScreen(),
@@ -210,6 +232,7 @@ class SamadhanApp extends StatelessWidget {
             '/login': (context) => const LoginScreen(),
             '/register': (context) => const RegisterScreen(),
             '/download': (context) => const WebsiteDownloadPage(),
+            '/how-it-works': (context) => const WebsiteHowItWorksPage(),
             '/': (context) => kIsWeb
                 ? WebsiteRootRouter(
                     authenticatedBuilder: (context, result) {

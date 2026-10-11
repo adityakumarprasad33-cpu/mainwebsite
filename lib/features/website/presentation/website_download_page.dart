@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:citizen_app/features/website/presentation/download_launcher.dart';
 import 'package:citizen_app/features/website/presentation/download_release_metadata.dart';
+import 'package:citizen_app/features/website/presentation/website_staff_chat_button.dart';
 import 'package:flutter/material.dart';
 
 class WebsiteDownloadPage extends StatefulWidget {
@@ -56,20 +57,29 @@ class _WebsiteDownloadPageState extends State<WebsiteDownloadPage> {
           _Navigation(compact: compact),
           const _CivicStrip(),
           Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  _Hero(
-                    compact: compact,
-                    available: available,
-                    release: widget.release,
-                    opening: _openingDownload,
-                    onDownload: _download,
+            child: Stack(
+              children: [
+                SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      _Hero(
+                        compact: compact,
+                        available: available,
+                        release: widget.release,
+                        opening: _openingDownload,
+                        onDownload: _download,
+                      ),
+                      _Sections(compact: compact, available: available),
+                      const _Footer(),
+                    ],
                   ),
-                  _Sections(compact: compact, available: available),
-                  const _Footer(),
-                ],
-              ),
+                ),
+                const Positioned(
+                  right: 22,
+                  bottom: 22,
+                  child: WebsiteStaffChatButton(),
+                ),
+              ],
             ),
           ),
         ],
@@ -109,7 +119,7 @@ class _Announcement extends StatelessWidget {
                 'Report. Track. Build a better tomorrow together.',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 11,
+                  fontSize: 13,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -160,9 +170,8 @@ class _Navigation extends StatelessWidget {
                   icon: const Icon(Icons.menu_rounded, color: _C.ink),
                   onSelected: (route) => _go(context, route),
                   itemBuilder: (_) => const [
-                    PopupMenuItem(value: '/', child: Text('Home')),
                     PopupMenuItem(
-                      value: '/#how-it-works',
+                      value: '/how-it-works',
                       child: Text('How It Works'),
                     ),
                     PopupMenuItem(value: '/#features', child: Text('Features')),
@@ -180,8 +189,7 @@ class _Navigation extends StatelessWidget {
                 )
               else ...[
                 for (final item in const [
-                  ('Home', '/'),
-                  ('How It Works', '/#how-it-works'),
+                  ('How It Works', '/how-it-works'),
                   ('Features', '/#features'),
                   ('FAQ', '/#faq'),
                   ('Download App', '/download'),
@@ -194,7 +202,7 @@ class _Navigation extends StatelessWidget {
                       child: Text(
                         item.$1,
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 14,
                           fontWeight: item.$1 == 'Download App'
                               ? FontWeight.w700
                               : FontWeight.w500,
@@ -275,11 +283,14 @@ class _CivicStrip extends StatelessWidget {
             'Small actions from citizens can create big changes in our cities and communities.',
             style: TextStyle(
               color: _C.ink,
-              fontSize: 11,
+              fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
           ),
-          Text('— SamadhanAI', style: TextStyle(color: _C.muted, fontSize: 11)),
+          Text(
+            '— SamadhanAI',
+            style: TextStyle(color: _C.muted, fontSize: 11),
+          ),
         ],
       ),
     ),
@@ -419,7 +430,7 @@ class _HeroCopy extends StatelessWidget {
         constraints: BoxConstraints(maxWidth: 520),
         child: Text(
           'Use the SamadhanAI mobile app to report civic issues, add photos, and follow updates wherever you are.',
-          style: TextStyle(color: _C.ink, fontSize: 15, height: 1.45),
+          style: TextStyle(color: _C.ink, fontSize: 17, height: 1.45),
         ),
       ),
       const SizedBox(height: 18),
@@ -473,7 +484,7 @@ class _HeroCopy extends StatelessWidget {
                           : 'The download links will be enabled once the official release artifact is verified and available.',
                       style: const TextStyle(
                         color: _C.ink,
-                        fontSize: 11,
+                        fontSize: 13,
                         height: 1.4,
                       ),
                     ),
@@ -545,7 +556,7 @@ class _DownloadOption extends StatelessWidget {
                     style: const TextStyle(
                       color: _C.ink,
                       fontWeight: FontWeight.w700,
-                      fontSize: 13,
+                      fontSize: 14,
                     ),
                   ),
                   const SizedBox(height: 3),
@@ -553,7 +564,7 @@ class _DownloadOption extends StatelessWidget {
                     subtitle,
                     style: const TextStyle(
                       color: _C.muted,
-                      fontSize: 10.5,
+                      fontSize: 12,
                       height: 1.3,
                     ),
                   ),
@@ -636,7 +647,7 @@ class _PhoneMockup extends StatelessWidget {
                               style: TextStyle(
                                 color: _C.ink,
                                 fontWeight: FontWeight.w700,
-                                fontSize: 12,
+                                fontSize: 14,
                               ),
                             ),
                           ),
@@ -667,7 +678,7 @@ class _PhoneMockup extends StatelessWidget {
                               style: TextStyle(
                                 color: _C.ink,
                                 fontWeight: FontWeight.w700,
-                                fontSize: 11,
+                                fontSize: 13,
                               ),
                             ),
                           ),
@@ -711,7 +722,7 @@ class _PhoneMockup extends StatelessWidget {
                             child: Text(
                               'My Recent Issues',
                               style: TextStyle(
-                                fontSize: 10,
+                                fontSize: 12,
                                 color: _C.ink,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -1007,7 +1018,7 @@ class _Benefit extends StatelessWidget {
                 title,
                 style: const TextStyle(
                   color: _C.ink,
-                  fontSize: 12,
+                  fontSize: 14,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -1016,7 +1027,7 @@ class _Benefit extends StatelessWidget {
                 body,
                 style: const TextStyle(
                   color: _C.muted,
-                  fontSize: 10.5,
+                  fontSize: 12,
                   height: 1.4,
                 ),
               ),
@@ -1062,7 +1073,7 @@ class _StepCard extends StatelessWidget {
                 title,
                 style: const TextStyle(
                   color: _C.ink,
-                  fontSize: 12,
+                  fontSize: 14,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -1071,7 +1082,7 @@ class _StepCard extends StatelessWidget {
                 body,
                 style: const TextStyle(
                   color: _C.muted,
-                  fontSize: 10,
+                  fontSize: 12,
                   height: 1.4,
                 ),
               ),
@@ -1108,7 +1119,7 @@ class _PlatformCard extends StatelessWidget {
                 style: const TextStyle(
                   color: _C.ink,
                   fontWeight: FontWeight.w700,
-                  fontSize: 12,
+                  fontSize: 14,
                 ),
               ),
               const SizedBox(height: 3),
@@ -1116,7 +1127,7 @@ class _PlatformCard extends StatelessWidget {
                 status,
                 style: const TextStyle(
                   color: _C.muted,
-                  fontSize: 10,
+                  fontSize: 12,
                   height: 1.4,
                 ),
               ),
