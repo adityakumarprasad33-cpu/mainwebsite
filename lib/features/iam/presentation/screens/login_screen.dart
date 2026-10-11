@@ -129,10 +129,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _showServerSettings() {
-    unawaited(Navigator.of(context).pushNamed('/network-settings'));
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -146,13 +142,6 @@ class _LoginScreenState extends State<LoginScreen> {
           style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            tooltip: 'Server Gateway Settings',
-            onPressed: _showServerSettings,
-          ),
-        ],
       ),
       body: Center(
         child: SingleChildScrollView(

@@ -548,13 +548,26 @@ class _NavigationBar extends StatelessWidget {
                         ),
                       ],
                     ] else
-                      IconButton(
-                        tooltip: menuOpen
-                            ? 'Close navigation menu'
-                            : 'Open navigation menu',
-                        onPressed: onMenu,
-                        icon: Icon(menuOpen ? Icons.close : Icons.menu),
-                        color: _LandingColors.ink,
+                      Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEAF5F1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFC7E5D9)),
+                        ),
+                        child: IconButton(
+                          tooltip: menuOpen
+                              ? 'Close navigation menu'
+                              : 'Open navigation menu',
+                          onPressed: onMenu,
+                          constraints: const BoxConstraints.tightFor(
+                            width: 48,
+                            height: 48,
+                          ),
+                          padding: EdgeInsets.zero,
+                          iconSize: 27,
+                          icon: Icon(menuOpen ? Icons.close : Icons.menu),
+                          color: _LandingColors.ink,
+                        ),
                       ),
                   ],
                 ),

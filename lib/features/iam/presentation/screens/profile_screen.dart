@@ -109,10 +109,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _showGatewaySettings() {
-    unawaited(Navigator.of(context).pushNamed('/network-settings'));
-  }
-
   String _formatDisplayName() {
     if (session.displayName != null && session.displayName!.trim().isNotEmpty) {
       return session.displayName!;
@@ -148,13 +144,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'Citizen Profile & Services',
           style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            tooltip: 'Gateway Settings',
-            onPressed: _showGatewaySettings,
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         child: Column(

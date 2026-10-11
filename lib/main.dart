@@ -25,7 +25,6 @@ import 'package:citizen_app/features/website/presentation/website_download_page.
 import 'package:citizen_app/features/website/presentation/website_landing_page.dart';
 import 'package:citizen_app/platform/bootstrap/bootstrap_manager.dart';
 import 'package:citizen_app/platform/bootstrap/protected_route_guard.dart';
-import 'package:citizen_app/platform/bootstrap/network_config_screen.dart';
 import 'package:citizen_app/platform/localization/language_provider.dart';
 import 'package:citizen_app/platform/api/api_client.dart';
 import 'package:citizen_app/platform/session/session_manager.dart';
@@ -230,7 +229,6 @@ class SamadhanApp extends StatelessWidget {
           // Android/iOS retain the existing splash-first startup.
           initialRoute: kIsWeb ? null : '/splash',
           routes: {
-            '/network-settings': (context) => const NetworkConfigScreen(),
             '/splash': (context) => const SplashScreen(),
             '/login': (context) => const LoginScreen(),
             '/register': (context) => const RegisterScreen(),

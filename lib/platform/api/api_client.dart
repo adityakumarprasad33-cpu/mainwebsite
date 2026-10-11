@@ -1,4 +1,3 @@
-import 'package:citizen_app/platform/session/secure_storage_adapter.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
@@ -7,12 +6,14 @@ import 'package:flutter/foundation.dart';
 class ApiClientConfig {
   ApiClientConfig._();
 
-  static const _storageKey = 'apiBaseUrls';
-  static const _legacyStorageKey = 'apiBaseUrl';
   static const _retryBaseKey = 'samadhanFailoverBaseUrl';
   static const _retriedKey = 'samadhanFailoverRetried';
-  static const String _environmentUrls = String.fromEnvironment(
+  static const String _environmentUrlList = String.fromEnvironment(
     'API_BASE_URLS',
+    defaultValue: '',
+  );
+  static const String _environmentUrl = String.fromEnvironment(
+    'API_BASE_URL',
     defaultValue: '',
   );
   static const bool _requireHttps =
@@ -21,7 +22,6 @@ class ApiClientConfig {
   static const Duration _probeTimeout = Duration(seconds: 2);
   static const Duration _healthyCacheDuration = Duration(seconds: 15);
 
-  static List<String>? _runtimeUrls;
   static String? _activeUrl;
   static DateTime? _activeUrlExpiresAt;
 
@@ -29,8 +29,9 @@ class ApiClientConfig {
   static Future<bool> Function(String baseUrl)? readinessCheckOverride;
 
   static List<String> get configuredBaseUrls {
-    if (_runtimeUrls != null) return List.unmodifiable(_runtimeUrls!);
-    final configured = _environmentUrls.trim();
+    final configured = _environmentUrlList.trim().isNotEmpty
+        ? _environmentUrlList.trim()
+        : _environmentUrl.trim();
     if (configured.isNotEmpty) return normalizeBaseUrls(configured);
     // For a local web preview, target the same host that served the website.
     // A fixed 127.0.0.1 breaks when another device opens the preview over LAN.
@@ -47,97 +48,15 @@ class ApiClientConfig {
   static String get baseUrl =>
       configuredBaseUrl ??
       (throw StateError(
-        'Backend URL is not configured. Open Network Settings and enter one or more API URLs.',
+        'Backend URL is not configured. Set API_BASE_URL in the build environment.',
       ));
 
   static bool get isConfigured => configuredBaseUrls.isNotEmpty;
   static String get aiBaseUrl => '$baseUrl/ai';
   static String get currentHost => Uri.parse(baseUrl).host;
 
-  /// Loads the saved endpoint list and probes it before creating API clients.
+  /// Probes build-environment endpoints before creating API clients.
   static Future<void> initialize() async {
-    var stored = await SecureStorageAdapter.read(key: _storageKey);
-    if (stored == null || stored.trim().isEmpty) {
-      stored = await SecureStorageAdapter.read(key: _legacyStorageKey);
-    }
-    if (stored != null && stored.trim().isNotEmpty) {
-      _runtimeUrls = normalizeBaseUrls(stored);
-      await SecureStorageAdapter.write(
-        key: _storageKey,
-        value: _runtimeUrls!.join('\n'),
-      );
-      await SecureStorageAdapter.delete(key: _legacyStorageKey);
-    } else {
-      _runtimeUrls = null;
-    }
-
-    final savedUrls = _runtimeUrls;
-    var urls = configuredBaseUrls;
-    if (urls.isNotEmpty) {
-      _activeUrl = await _findHealthyUrl(urls);
-      // Old device overrides must not permanently mask a reachable build
-      // endpoint after a backend URL changes. Keep the saved value only when
-      // the build default is also unavailable, so Network Settings can show it.
-      if (_activeUrl == null && savedUrls != null) {
-        _runtimeUrls = null;
-        urls = configuredBaseUrls;
-        _activeUrl = await _findHealthyUrl(urls);
-        if (_activeUrl != null) {
-          await SecureStorageAdapter.delete(key: _storageKey);
-          await SecureStorageAdapter.delete(key: _legacyStorageKey);
-        } else {
-          _runtimeUrls = savedUrls;
-        }
-      }
-      _activeUrlExpiresAt = _activeUrl == null
-          ? null
-          : DateTime.now().add(_healthyCacheDuration);
-    }
-  }
-
-  /// Saves one to three ordered URLs. They must be replicas of the same API.
-  static Future<void> setBaseUrls(
-    String value, {
-    String? selectedUrl,
-  }) async {
-    final urls = normalizeBaseUrls(value);
-    if (selectedUrl != null && !urls.contains(selectedUrl)) {
-      throw const FormatException('The selected API is not in the URL list.');
-    }
-    final activeUrl = selectedUrl ?? await _findHealthyUrl(urls);
-    if (activeUrl == null) {
-      throw StateError(
-        'No configured API endpoint passed the readiness check.',
-      );
-    }
-    _runtimeUrls = urls;
-    _activeUrl = activeUrl;
-    // Runtime changes are applied only after the settings screen's readiness
-    // probe succeeds; avoid probing the same address again on its next call.
-    _activeUrlExpiresAt = DateTime.now().add(_healthyCacheDuration);
-    await SecureStorageAdapter.write(
-      key: _storageKey,
-      value: _runtimeUrls!.join('\n'),
-    );
-    await SecureStorageAdapter.delete(key: _legacyStorageKey);
-  }
-
-  /// Tests candidates in order and selects the first API whose readiness check passes.
-  static Future<String?> testAndSelectBaseUrls(String value) async {
-    final urls = normalizeBaseUrls(value);
-    _activeUrl = await _findHealthyUrl(urls);
-    _activeUrlExpiresAt = _activeUrl == null
-        ? null
-        : DateTime.now().add(_healthyCacheDuration);
-    return _activeUrl;
-  }
-
-  static Future<void> resetToBuildDefault() async {
-    await SecureStorageAdapter.delete(key: _storageKey);
-    await SecureStorageAdapter.delete(key: _legacyStorageKey);
-    _runtimeUrls = null;
-    _activeUrl = null;
-    _activeUrlExpiresAt = null;
     final urls = configuredBaseUrls;
     if (urls.isNotEmpty) {
       _activeUrl = await _findHealthyUrl(urls);
@@ -275,7 +194,7 @@ class ApiClientConfig {
                   requestOptions: options,
                   type: DioExceptionType.connectionError,
                   message: configuredBaseUrls.isEmpty
-                      ? 'API_BASE_URLS is missing from this web build. Rebuild with the public backend URL or set it in Network Settings.'
+                      ? 'API_BASE_URL is missing from this build. Configure the backend URL in the build environment and rebuild.'
                       : 'No configured backend passed /ready. Check that its URL resolves, allows this website origin in CORS, and reports database, storage, and rateGuard ready.',
                 ),
               );
@@ -337,6 +256,5 @@ class ApiClientConfig {
 
   static String get debugInfo =>
       'Configured API endpoints: ${configuredBaseUrls.length}\n'
-      'Selected API: ${configuredBaseUrl ?? 'not configured'}\n'
-      'Device override: ${_runtimeUrls == null ? 'none' : 'saved'}';
+      'Selected API: ${configuredBaseUrl ?? 'not configured'}';
 }
