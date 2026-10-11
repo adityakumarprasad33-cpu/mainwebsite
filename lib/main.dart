@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:ui';
 
 import 'package:citizen_app/features/grievances/presentation/screens/comments_screen.dart';
@@ -22,6 +22,7 @@ import 'package:citizen_app/features/splash/presentation/screens/splash_screen.d
 import 'package:citizen_app/features/website/presentation/website_root_router.dart';
 import 'package:citizen_app/features/website/presentation/website_how_it_works_page.dart';
 import 'package:citizen_app/features/website/presentation/website_download_page.dart';
+import 'package:citizen_app/features/website/presentation/website_landing_page.dart';
 import 'package:citizen_app/platform/bootstrap/bootstrap_manager.dart';
 import 'package:citizen_app/platform/bootstrap/protected_route_guard.dart';
 import 'package:citizen_app/platform/bootstrap/network_config_screen.dart';
@@ -230,34 +231,7 @@ class SamadhanApp extends StatelessWidget {
             '/download': (context) => const WebsiteDownloadPage(),
             '/how-it-works': (context) => const WebsiteHowItWorksPage(),
             '/': (context) => kIsWeb
-                ? WebsiteRootRouter(
-                    authenticatedBuilder: (context, result) {
-                      if (result.role == UserRoleEnum.nodalOfficer) {
-                        return ProtectedRouteGuard(
-                          allowedRoles: const {
-                            UserRoleEnum.nodalOfficer,
-                            UserRoleEnum.departmentAdmin,
-                            UserRoleEnum.superAdmin,
-                          },
-                          child: const OfficerDashboardScreen(),
-                        );
-                      }
-                      if (result.role == UserRoleEnum.departmentAdmin ||
-                          result.role == UserRoleEnum.superAdmin) {
-                        return ProtectedRouteGuard(
-                          allowedRoles: const {
-                            UserRoleEnum.departmentAdmin,
-                            UserRoleEnum.superAdmin,
-                          },
-                          child: const AdminDashboardScreen(),
-                        );
-                      }
-                      return ProtectedRouteGuard(
-                        allowedRoles: const {UserRoleEnum.citizen},
-                        child: const CitizenDashboardScreen(),
-                      );
-                    },
-                  )
+                ? const WebsiteLandingPage()
                 : ProtectedRouteGuard(
                     allowedRoles: {
                       UserRoleEnum.citizen,
@@ -491,7 +465,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
         ),
         actions: [
           IconButton(
-            tooltip: 'Language / भाषा',
+            tooltip: 'Language / à¤­à¤¾à¤·à¤¾',
             icon: const Icon(Icons.language_outlined),
             onPressed: () => _showLanguageSelector(context),
           ),
@@ -512,7 +486,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
       ),
       body: CustomScrollView(
         slivers: [
-          // ── Hero Banner with Glassmorphism ──
+          // â”€â”€ Hero Banner with Glassmorphism â”€â”€
           SliverToBoxAdapter(
             child: Container(
               width: double.infinity,
@@ -636,7 +610,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
             ),
           ),
 
-          // ── Stat Cards with Glass Effect ──
+          // â”€â”€ Stat Cards with Glass Effect â”€â”€
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(20),
@@ -667,7 +641,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
             ),
           ),
 
-          // ── Services Section Header ──
+          // â”€â”€ Services Section Header â”€â”€
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -682,7 +656,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
             ),
           ),
 
-          // ── Module Grid Tiles ──
+          // â”€â”€ Module Grid Tiles â”€â”€
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             sliver: SliverGrid.count(
