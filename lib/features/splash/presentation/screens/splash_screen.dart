@@ -19,7 +19,7 @@ class _SplashScreenState extends State<SplashScreen>
   late final Animation<double> _fadeAnimation;
   late final Animation<double> _glowAnimation;
 
-  String _statusText = 'Initializing RunixGov AI Core...';
+  String _statusText = 'Preparing SamadhanAI...';
 
   @override
   void initState() {
@@ -55,7 +55,7 @@ class _SplashScreenState extends State<SplashScreen>
     await Future<void>.delayed(const Duration(milliseconds: 800));
     if (!mounted) return;
     setState(() {
-      _statusText = 'Verifying Citizen & Officer IAM Security...';
+      _statusText = 'Checking your sign-in and app services...';
     });
 
     BootstrapResult bootstrapResult;
@@ -75,7 +75,7 @@ class _SplashScreenState extends State<SplashScreen>
     await Future<void>.delayed(const Duration(milliseconds: 900));
     if (!mounted) return;
     setState(() {
-      _statusText = 'RunixGov AI Online • Ready';
+      _statusText = 'Your workspace is ready.';
     });
 
     await Future<void>.delayed(const Duration(milliseconds: 500));
@@ -131,12 +131,16 @@ class _SplashScreenState extends State<SplashScreen>
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF2563EB).withValues(alpha: 0.35),
+                            color: const Color(
+                              0xFF2563EB,
+                            ).withValues(alpha: 0.35),
                             blurRadius: 36,
                             spreadRadius: 8,
                           ),
                           BoxShadow(
-                            color: const Color(0xFFFFB300).withValues(alpha: 0.25),
+                            color: const Color(
+                              0xFFFFB300,
+                            ).withValues(alpha: 0.25),
                             blurRadius: 48,
                             spreadRadius: 4,
                           ),
@@ -206,7 +210,7 @@ class _SplashScreenState extends State<SplashScreen>
                         ),
                       ),
                       child: Text(
-                        'Government of Bihar • Civic AI Governance',
+                        'Citizen Grievance Portal',
                         style: GoogleFonts.inter(
                           fontSize: 11,
                           color: Colors.white.withValues(alpha: 0.85),
@@ -218,6 +222,9 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
               ),
 
+              const SizedBox(height: 28),
+              const _StartupSkeletonPanel(),
+
               const Spacer(flex: 3),
 
               // Animated Progress & Status
@@ -227,17 +234,20 @@ class _SplashScreenState extends State<SplashScreen>
                   padding: const EdgeInsets.only(bottom: 36),
                   child: Column(
                     children: [
-                      const SizedBox(
-                        width: 28,
-                        height: 28,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Color(0xFFFFB300),
+                      SizedBox(
+                        width: 190,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(99),
+                          child: const LinearProgressIndicator(
+                            minHeight: 5,
+                            backgroundColor: Color(0x334B7090),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Color(0xFF23B58A),
+                            ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 12),
                       Text(
                         _statusText,
                         style: GoogleFonts.inter(
@@ -256,4 +266,80 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
   }
+}
+
+class _StartupSkeletonPanel extends StatelessWidget {
+  const _StartupSkeletonPanel();
+
+  @override
+  Widget build(BuildContext context) => ConstrainedBox(
+    constraints: const BoxConstraints(maxWidth: 340),
+    child: Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: .07),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withValues(alpha: .12)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              _SkeletonBlock(
+                width: 38,
+                height: 38,
+                radius: BorderRadius.circular(13),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _SkeletonBlock(width: 148, height: 10),
+                    SizedBox(height: 7),
+                    _SkeletonBlock(width: 96, height: 7),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          const _SkeletonBlock(width: double.infinity, height: 42),
+          const SizedBox(height: 9),
+          Row(
+            children: [
+              const Expanded(child: _SkeletonBlock(height: 28)),
+              const SizedBox(width: 9),
+              const Expanded(child: _SkeletonBlock(height: 28)),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _SkeletonBlock extends StatelessWidget {
+  const _SkeletonBlock({
+    this.width,
+    required this.height,
+    this.radius = const BorderRadius.all(Radius.circular(6)),
+  });
+
+  final double? width;
+  final double height;
+  final BorderRadius radius;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: width,
+    height: height,
+    decoration: BoxDecoration(
+      borderRadius: radius,
+      gradient: const LinearGradient(
+        colors: [Color(0x1FFFFFFF), Color(0x35FFFFFF), Color(0x1FFFFFFF)],
+      ),
+    ),
+  );
 }

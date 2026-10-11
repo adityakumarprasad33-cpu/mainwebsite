@@ -36,8 +36,80 @@
 
   <title>SamadhanAI - Report public issues</title>
   <link rel="manifest" href="manifest.json">
+  <style>
+    :root { color-scheme: light; font-family: Inter, system-ui, sans-serif; }
+    body { margin: 0; background: #f6f8f7; }
+    #app-preloader {
+      position: fixed; inset: 0; z-index: 9999; display: grid; place-items: center;
+      padding: 20px; box-sizing: border-box; color: #102c45;
+      background: radial-gradient(ellipse at 85% 12%, #e5f2ee 0, transparent 34%), #f6f8f7;
+      transition: opacity 260ms ease, visibility 260ms ease;
+    }
+    #app-preloader.is-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+    .preload-shell { width: min(100%, 760px); }
+    .preload-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; font-size: 18px; font-weight: 800; letter-spacing: -.4px; }
+    .preload-mark { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 12px; color: #fff; background: #078f68; font-size: 17px; }
+    .preload-brand span:last-child { color: #07966b; }
+    .preload-hero { display: grid; grid-template-columns: 1.1fr .9fr; gap: 20px; align-items: stretch; }
+    .preload-copy, .preload-visual, .preload-card { border: 1px solid #e1e9e6; border-radius: 20px; background: rgba(255,255,255,.82); box-shadow: 0 12px 34px rgba(16,44,69,.06); }
+    .preload-copy { padding: clamp(22px, 5vw, 40px); display: flex; flex-direction: column; justify-content: center; gap: 13px; }
+    .preload-visual { min-height: 210px; display: grid; place-items: center; background: linear-gradient(145deg,#e4f0eb,#eef3f5 58%,#d9e8e1); overflow: hidden; }
+    .preload-phone { width: 104px; height: 166px; border: 6px solid #183a4c; border-radius: 24px; background: #fff; padding: 20px 10px 10px; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; transform: rotate(-5deg); box-shadow: 0 14px 28px #183a4c24; }
+    .preload-phone::before { content: ''; position: absolute; top: 7px; left: 36px; width: 20px; height: 4px; border-radius: 5px; background: #183a4c; }
+    .preload-cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-top: 14px; }
+    .preload-card { min-height: 66px; display: flex; align-items: center; gap: 12px; padding: 14px; box-sizing: border-box; }
+    .shimmer { position: relative; overflow: hidden; border-radius: 8px; background: #e9efed; }
+    .shimmer::after { content: ''; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg,transparent,rgba(255,255,255,.8),transparent); animation: preload-shimmer 1.45s infinite; }
+    @keyframes preload-shimmer { to { transform: translateX(100%); } }
+    .preload-line { height: 12px; width: 100%; }
+    .preload-line.title { width: 86%; height: 22px; border-radius: 10px; }
+    .preload-line.short { width: 67%; }
+    .preload-dot { flex: 0 0 34px; height: 34px; border-radius: 50%; }
+    .preload-status { display: flex; align-items: center; gap: 9px; margin-top: 22px; color: #526a76; font-size: 13px; font-weight: 600; }
+    .preload-pulse { width: 8px; height: 8px; border-radius: 50%; background: #07966b; box-shadow: 0 0 0 5px #07966b1c; }
+    @media (max-width: 560px) {
+      .preload-brand { margin-bottom: 18px; }
+      .preload-hero { grid-template-columns: 1fr; gap: 12px; }
+      .preload-copy { padding: 20px; }
+      .preload-visual { min-height: 120px; }
+      .preload-phone { transform: scale(.72) rotate(-5deg); margin: -22px; }
+      .preload-cards { grid-template-columns: 1fr; gap: 8px; margin-top: 10px; }
+      .preload-card { min-height: 48px; padding: 8px 12px; }
+      .preload-card:nth-child(n+3) { display: none; }
+      .preload-status { margin-top: 16px; }
+    }
+    @media (prefers-reduced-motion: reduce) { .shimmer::after { animation: none; } }
+  </style>
 </head>
 <body>
+  <div id="app-preloader" role="status" aria-live="polite" aria-label="Loading SamadhanAI">
+    <div class="preload-shell">
+      <div class="preload-brand"><span class="preload-mark">S</span>Samadhan<span>AI</span></div>
+      <div class="preload-hero">
+        <div class="preload-copy">
+          <div class="shimmer preload-line title"></div>
+          <div class="shimmer preload-line"></div>
+          <div class="shimmer preload-line short"></div>
+          <div style="display:flex;gap:10px;margin-top:8px"><div class="shimmer" style="width:120px;height:38px;border-radius:12px"></div><div class="shimmer" style="width:108px;height:38px;border-radius:12px"></div></div>
+        </div>
+        <div class="preload-visual"><div class="preload-phone"><div class="shimmer preload-line"></div><div class="shimmer" style="height:38px;border-radius:8px"></div><div class="shimmer" style="height:28px;border-radius:8px"></div><div class="shimmer" style="height:28px;border-radius:8px"></div></div></div>
+      </div>
+      <div class="preload-cards">
+        <div class="preload-card"><div class="shimmer preload-dot"></div><div style="flex:1;display:grid;gap:8px"><div class="shimmer preload-line"></div><div class="shimmer preload-line short"></div></div></div>
+        <div class="preload-card"><div class="shimmer preload-dot"></div><div style="flex:1;display:grid;gap:8px"><div class="shimmer preload-line"></div><div class="shimmer preload-line short"></div></div></div>
+        <div class="preload-card"><div class="shimmer preload-dot"></div><div style="flex:1;display:grid;gap:8px"><div class="shimmer preload-line"></div><div class="shimmer preload-line short"></div></div></div>
+      </div>
+      <div class="preload-status"><span class="preload-pulse"></span>Preparing your SamadhanAI experience…</div>
+    </div>
+  </div>
+  <script>
+    window.addEventListener('flutter-first-frame', function () {
+      var loader = document.getElementById('app-preloader');
+      if (!loader) return;
+      loader.classList.add('is-hidden');
+      window.setTimeout(function () { loader.remove(); }, 320);
+    }, { once: true });
+  </script>
   <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader
