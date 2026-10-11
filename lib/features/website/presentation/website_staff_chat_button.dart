@@ -66,44 +66,55 @@ class _StaffPortraitPair extends StatelessWidget {
       shape: BoxShape.circle,
       border: Border.all(color: const Color(0xFFD4E9E3)),
     ),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _StaffFace(
-          icon: Icons.man_rounded,
-          background: const Color(0xFFE1F0F6),
-          foreground: const Color(0xFF075078),
-          size: size * .43,
+    child: Padding(
+      padding: const EdgeInsets.all(1.5),
+      child: ClipOval(
+        child: Image.asset(
+          'assets/images/chat_support_staff.jpg',
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          semanticLabel: 'SamadhanAI support staff answering citizen calls',
+          errorBuilder: (context, error, stackTrace) => _StaffGlyphPair(
+            size: size,
+          ),
         ),
-        SizedBox(width: size * .015),
-        _StaffFace(
-          icon: Icons.woman_rounded,
-          background: const Color(0xFFFCE9E4),
-          foreground: const Color(0xFFB94F58),
-          size: size * .43,
-        ),
-      ],
+      ),
     ),
   );
 }
 
-class _StaffFace extends StatelessWidget {
-  const _StaffFace({
-    required this.icon,
-    required this.background,
-    required this.foreground,
-    required this.size,
-  });
-  final IconData icon;
-  final Color background;
-  final Color foreground;
+class _StaffGlyphPair extends StatelessWidget {
+  const _StaffGlyphPair({required this.size});
   final double size;
 
   @override
-  Widget build(BuildContext context) => CircleAvatar(
-    radius: size / 2,
-    backgroundColor: background,
-    child: Icon(icon, color: foreground, size: size * .72),
+  Widget build(BuildContext context) => Container(
+    color: const Color(0xFFEAF4F2),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        CircleAvatar(
+          radius: size * .22,
+          backgroundColor: const Color(0xFFE1F0F6),
+          child: Icon(
+            Icons.man_rounded,
+            color: const Color(0xFF075078),
+            size: size * .32,
+          ),
+        ),
+        SizedBox(width: size * .015),
+        CircleAvatar(
+          radius: size * .22,
+          backgroundColor: const Color(0xFFFCE9E4),
+          child: Icon(
+            Icons.woman_rounded,
+            color: const Color(0xFFB94F58),
+            size: size * .32,
+          ),
+        ),
+      ],
+    ),
   );
 }
 
@@ -250,17 +261,31 @@ class _CitizenHelpDialogState extends State<_CitizenHelpDialog> {
         .replaceAll(RegExp(r'[^a-z0-9 ]'), ' ')
         .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
+    final paddedQuestion = ' $normalized ';
+    final words = normalized.split(' ').toSet();
     const keywords = <List<String>>[
-      ['samadhanai', 'what is', 'about the service', 'what does it do'],
+      [
+        'what is samadhanai',
+        'what is samadhan ai',
+        'what is this app',
+        'what does samadhanai do',
+        'about samadhanai',
+      ],
       [
         'password',
+        'passwords',
         'passcode',
         'otp',
+        'otps',
         'one time code',
         'api key',
+        'api keys',
         'token',
+        'tokens',
         'credential',
+        'credentials',
         'secret',
+        'secrets',
       ],
       ['report', 'submit', 'complaint', 'grievance', 'civic issue', 'lodge'],
       ['details', 'photo', 'picture', 'location', 'evidence', 'attach'],
@@ -280,7 +305,13 @@ class _CitizenHelpDialogState extends State<_CitizenHelpDialog> {
         'hear back',
         'status update',
       ],
-      ['ai', 'artificial intelligence', 'classify', 'suggest wording'],
+      [
+        'ai',
+        'use ai',
+        'artificial intelligence',
+        'classify',
+        'suggest wording',
+      ],
       [
         'access my account',
         'access my report',
@@ -299,18 +330,32 @@ class _CitizenHelpDialogState extends State<_CitizenHelpDialog> {
       ],
     ];
     var bestScore = 0;
+    var secondBestScore = 0;
     _HelpTopic? bestTopic;
     for (var i = 0; i < _topics.length; i++) {
+      var topicScore = 0;
       for (final keyword in keywords[i]) {
-        if (normalized.contains(keyword)) {
-          final score = keyword.length;
-          if (score > bestScore) {
-            bestScore = score;
-            bestTopic = _topics[i];
-          }
+        final isPhrase = keyword.contains(' ');
+        final matches = isPhrase
+            ? paddedQuestion.contains(' $keyword ')
+            : words.contains(keyword);
+        if (matches) {
+          topicScore += isPhrase
+              ? 3 + keyword.split(' ').length
+              : keyword.length <= 3
+              ? 3
+              : 2;
         }
       }
+      if (topicScore > bestScore) {
+        secondBestScore = bestScore;
+        bestScore = topicScore;
+        bestTopic = _topics[i];
+      } else if (topicScore > secondBestScore) {
+        secondBestScore = topicScore;
+      }
     }
+    if (bestScore < 2 || (bestScore - secondBestScore < 2)) return null;
     return bestTopic;
   }
 
@@ -325,7 +370,7 @@ class _CitizenHelpDialogState extends State<_CitizenHelpDialog> {
         caseSensitive: false,
       ),
       RegExp(
-        r'\b(?:api[\s_-]*key|access[\s_-]*token|secret|private[\s_-]*key)\s*(?:is|:|=)?\s+\S+',
+        r'\b(?:api[\s_-]*key|access[\s_-]*token|secret|private[\s_-]*key)\s*(?:is|:|=)\s*[A-Za-z0-9_/+=.-]{8,}',
         caseSensitive: false,
       ),
       RegExp(r'\bAIza[0-9A-Za-z_-]{20,}\b'),
