@@ -139,32 +139,43 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('staff help uses preset private-safe answers without free text', (
-    tester,
-  ) async {
-    tester.view.devicePixelRatio = 1;
-    tester.view.physicalSize = const Size(390, 844);
-    await tester.pumpWidget(_app());
-    await tester.pumpAndSettle();
-    expect(find.byTooltip('Chat with SamadhanAI staff'), findsOneWidget);
-    await tester.tap(find.byTooltip('Chat with SamadhanAI staff'));
-    await tester.pumpAndSettle();
-    expect(
-      find.text(
-        'Preset FAQ only. No AI, account lookup, backend messages, or saved chat. Never enter passwords, OTPs, API keys, access tokens, or private report details.',
-      ),
-      findsOneWidget,
-    );
-    expect(find.byType(TextField), findsNothing);
-    await tester.tap(
-      find.text('Should I enter passwords, OTPs, or API keys here?'),
-    );
-    await tester.pumpAndSettle();
-    expect(find.textContaining('Never share passwords'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-    tester.view.resetPhysicalSize();
-    tester.view.resetDevicePixelRatio();
-  });
+  testWidgets(
+    'staff chat shows citizen and preset staff messages without free text',
+    (
+      tester,
+    ) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(390, 844);
+      await tester.pumpWidget(_app());
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('Chat with SamadhanAI staff'), findsOneWidget);
+      await tester.tap(find.byTooltip('Chat with SamadhanAI staff'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          'Namaste! Welcome to SamadhanAI help. Choose a question below and I’ll show you a preset answer.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Choose a question'), findsOneWidget);
+      expect(find.byType(TextField), findsNothing);
+      await tester.drag(find.byType(ListView).last, const Offset(-480, 0));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.text('Should I enter passwords, OTPs, or API keys here?'),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Should I enter passwords, OTPs, or API keys here?'),
+        findsWidgets,
+      );
+      expect(find.textContaining('Never share passwords'), findsOneWidget);
+      expect(find.text('SamadhanAI Staff'), findsWidgets);
+      expect(tester.takeException(), isNull);
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    },
+  );
 
   testWidgets('mobile menu scrolls to sections and reaches auth routes', (
     tester,

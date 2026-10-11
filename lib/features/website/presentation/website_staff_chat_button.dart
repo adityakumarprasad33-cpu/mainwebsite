@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 class WebsiteStaffChatButton extends StatelessWidget {
   const WebsiteStaffChatButton({super.key});
 
-  static const _navy = Color(0xFF102C45);
   static const _green = Color(0xFF07966B);
 
   @override
@@ -24,24 +23,7 @@ class WebsiteStaffChatButton extends StatelessWidget {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _StaffAvatar(
-                    icon: Icons.man_rounded,
-                    background: Color(0xFFE1F0F6),
-                    foreground: Color(0xFF075078),
-                    radius: 15,
-                  ),
-                  SizedBox(width: 2),
-                  _StaffAvatar(
-                    icon: Icons.woman_rounded,
-                    background: Color(0xFFFCE9E4),
-                    foreground: Color(0xFFB94F58),
-                    radius: 15,
-                  ),
-                ],
-              ),
+              _StaffPortraitPair(size: 42),
               Positioned(
                 right: 2,
                 bottom: 1,
@@ -71,74 +53,57 @@ class WebsiteStaffChatButton extends StatelessWidget {
   }
 }
 
-class _StaffAvatar extends StatelessWidget {
-  const _StaffAvatar({
-    required this.icon,
-    required this.background,
-    required this.foreground,
-    this.radius = 19,
-  });
-  final IconData icon;
-  final Color background;
-  final Color foreground;
-  final double radius;
-
-  @override
-  Widget build(BuildContext context) => CircleAvatar(
-    radius: radius,
-    backgroundColor: background,
-    child: Icon(icon, color: foreground, size: radius * 1.3),
-  );
-}
-
 class _StaffPortraitPair extends StatelessWidget {
   const _StaffPortraitPair({required this.size});
   final double size;
 
   @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      _StaffAvatar(
-        icon: Icons.man_rounded,
-        background: const Color(0xFFE1F0F6),
-        foreground: const Color(0xFF075078),
-        radius: size * .36,
-      ),
-      SizedBox(width: size * .025),
-      _StaffAvatar(
-        icon: Icons.woman_rounded,
-        background: const Color(0xFFFCE9E4),
-        foreground: const Color(0xFFB94F58),
-        radius: size * .36,
-      ),
-    ],
+  Widget build(BuildContext context) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      color: const Color(0xFFEAF4F2),
+      shape: BoxShape.circle,
+      border: Border.all(color: const Color(0xFFD4E9E3)),
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _StaffFace(
+          icon: Icons.man_rounded,
+          background: const Color(0xFFE1F0F6),
+          foreground: const Color(0xFF075078),
+          size: size * .43,
+        ),
+        SizedBox(width: size * .015),
+        _StaffFace(
+          icon: Icons.woman_rounded,
+          background: const Color(0xFFFCE9E4),
+          foreground: const Color(0xFFB94F58),
+          size: size * .43,
+        ),
+      ],
+    ),
   );
 }
 
-class _HelpAction extends StatelessWidget {
-  const _HelpAction({
+class _StaffFace extends StatelessWidget {
+  const _StaffFace({
     required this.icon,
-    required this.label,
-    required this.onPressed,
+    required this.background,
+    required this.foreground,
+    required this.size,
   });
   final IconData icon;
-  final String label;
-  final VoidCallback onPressed;
+  final Color background;
+  final Color foreground;
+  final double size;
 
   @override
-  Widget build(BuildContext context) => OutlinedButton.icon(
-    onPressed: onPressed,
-    icon: Icon(icon, size: 19),
-    label: Text(label),
-    style: OutlinedButton.styleFrom(
-      foregroundColor: const Color(0xFF102C45),
-      alignment: Alignment.centerLeft,
-      minimumSize: const Size.fromHeight(48),
-      padding: const EdgeInsets.symmetric(horizontal: 15),
-      side: const BorderSide(color: Color(0xFFDCE5E8)),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    ),
+  Widget build(BuildContext context) => CircleAvatar(
+    radius: size / 2,
+    backgroundColor: background,
+    child: Icon(icon, color: foreground, size: size * .72),
   );
 }
 
@@ -223,183 +188,286 @@ class _CitizenHelpDialogState extends State<_CitizenHelpDialog> {
     ),
   ];
 
-  _HelpTopic? _openTopic;
+  final _scrollController = ScrollController();
+  final List<_ChatMessage> _messages = [
+    const _ChatMessage.bot(
+      'Namaste! Welcome to SamadhanAI help. Choose a question below and I’ll show you a preset answer.',
+    ),
+  ];
+
+  void _ask(_HelpTopic topic) {
+    setState(() {
+      _messages
+        ..add(_ChatMessage.citizen(topic.question))
+        ..add(
+          _ChatMessage.bot(
+            topic.answer,
+            route: topic.route,
+            action: topic.action,
+          ),
+        );
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 260),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final panelHeight = (MediaQuery.sizeOf(context).height - 36)
-        .clamp(360.0, 670.0)
+        .clamp(430.0, 700.0)
         .toDouble();
     return Dialog(
       insetPadding: const EdgeInsets.all(12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 480),
+        constraints: const BoxConstraints(maxWidth: 500),
         child: SizedBox(
           height: panelHeight,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(18, 15, 18, 14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    const _StaffPortraitPair(size: 50),
-                    const SizedBox(width: 10),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'SamadhanAI Staff',
-                            style: TextStyle(
-                              color: _navy,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 18,
-                            ),
-                          ),
-                          SizedBox(height: 3),
-                          Text(
-                            'Citizen help • preset answers',
-                            style: TextStyle(
-                              color: Color(0xFF596D7A),
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: 'Close help',
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(Icons.close_rounded),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFF6E8),
-                    borderRadius: BorderRadius.circular(13),
-                    border: Border.all(color: const Color(0xFFF0E0BF)),
-                  ),
-                  child: const Text(
-                    'Preset FAQ only. No AI, account lookup, backend messages, or saved chat. Never enter passwords, OTPs, API keys, access tokens, or private report details.',
-                    style: TextStyle(
-                      color: Color(0xFF59462A),
-                      fontSize: 13,
-                      height: 1.4,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(2, 12, 2, 7),
-                  child: Text(
-                    'Choose a question',
-                    style: TextStyle(
-                      color: _navy,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: ListView.separated(
-                    itemCount: _topics.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 7),
-                    itemBuilder: (context, index) {
-                      final topic = _topics[index];
-                      final expanded = _openTopic == topic;
-                      return Container(
-                        decoration: BoxDecoration(
-                          color: expanded
-                              ? const Color(0xFFF0F7F5)
-                              : Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: expanded
-                                ? const Color(0xFFB6DDD0)
-                                : const Color(0xFFDCE5E8),
-                          ),
-                        ),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(12),
-                          onTap: () => setState(
-                            () => _openTopic = expanded ? null : topic,
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 11,
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        topic.question,
-                                        style: const TextStyle(
-                                          color: _navy,
-                                          fontSize: 14,
-                                          height: 1.3,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                    Icon(
-                                      expanded
-                                          ? Icons.remove_rounded
-                                          : Icons.add_rounded,
-                                      color: _green,
-                                    ),
-                                  ],
-                                ),
-                                if (expanded) ...[
-                                  const SizedBox(height: 9),
-                                  Text(
-                                    topic.answer,
-                                    style: const TextStyle(
-                                      color: Color(0xFF43596A),
-                                      fontSize: 14,
-                                      height: 1.5,
-                                    ),
-                                  ),
-                                  if (topic.route != null) ...[
-                                    const SizedBox(height: 10),
-                                    Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: TextButton.icon(
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                          Navigator.of(
-                                            widget.pageContext,
-                                          ).pushNamed(topic.route!);
-                                        },
-                                        icon: const Icon(
-                                          Icons.arrow_forward_rounded,
-                                          size: 17,
-                                        ),
-                                        label: Text(topic.action!),
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
+          child: Column(
+            children: [
+              _header(),
+              _privacyNote(),
+              Expanded(child: _conversation()),
+              _questionPicker(),
+            ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _header() => Container(
+    padding: const EdgeInsets.fromLTRB(16, 13, 10, 13),
+    decoration: const BoxDecoration(
+      color: Color(0xFFF8FBFA),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      border: Border(bottom: BorderSide(color: Color(0xFFE4ECE9))),
+    ),
+    child: Row(
+      children: [
+        const _StaffPortraitPair(size: 48),
+        const SizedBox(width: 11),
+        const Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'SamadhanAI Help Desk',
+                style: TextStyle(
+                  color: _navy,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 18,
+                ),
+              ),
+              SizedBox(height: 3),
+              Text(
+                'Preset answers · No AI',
+                style: TextStyle(color: Color(0xFF596D7A), fontSize: 13),
+              ),
+            ],
+          ),
+        ),
+        IconButton(
+          tooltip: 'Close help',
+          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.close_rounded),
+        ),
+      ],
+    ),
+  );
+
+  Widget _privacyNote() => Container(
+    width: double.infinity,
+    margin: const EdgeInsets.fromLTRB(14, 11, 14, 3),
+    padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
+    decoration: BoxDecoration(
+      color: const Color(0xFFFFF6E8),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: const Color(0xFFF0E0BF)),
+    ),
+    child: const Text(
+      'Preset FAQ only. No AI, account lookup, backend messages, or saved chat. Never share passwords, OTPs, API keys, or private report details.',
+      style: TextStyle(
+        color: Color(0xFF59462A),
+        fontSize: 12,
+        height: 1.35,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+  );
+
+  Widget _conversation() => ListView.builder(
+    controller: _scrollController,
+    padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+    itemCount: _messages.length,
+    itemBuilder: (context, index) => _MessageBubble(
+      message: _messages[index],
+      onAction: _messages[index].route == null
+          ? null
+          : () {
+              Navigator.of(context).pop();
+              Navigator.of(widget.pageContext).pushNamed(
+                _messages[index].route!,
+              );
+            },
+    ),
+  );
+
+  Widget _questionPicker() => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.fromLTRB(14, 9, 14, 13),
+    decoration: const BoxDecoration(
+      color: Color(0xFFF8FBFA),
+      border: Border(top: BorderSide(color: Color(0xFFE4ECE9))),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Choose a question',
+          style: TextStyle(
+            color: _navy,
+            fontSize: 13,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 7),
+        SizedBox(
+          height: 39,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: _topics.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 7),
+            itemBuilder: (context, index) {
+              final topic = _topics[index];
+              return ActionChip(
+                label: Text(topic.question),
+                onPressed: () => _ask(topic),
+                labelStyle: const TextStyle(
+                  color: _navy,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+                side: const BorderSide(color: Color(0xFFDCE8E3)),
+                backgroundColor: Colors.white,
+                shape: const StadiumBorder(),
+                visualDensity: VisualDensity.compact,
+              );
+            },
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _MessageBubble extends StatelessWidget {
+  const _MessageBubble({required this.message, required this.onAction});
+  final _ChatMessage message;
+  final VoidCallback? onAction;
+
+  static const _navy = Color(0xFF102C45);
+
+  @override
+  Widget build(BuildContext context) {
+    final isCitizen = message.isCitizen;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 11),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisAlignment: isCitizen
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
+        children: [
+          if (!isCitizen) ...[
+            const _StaffPortraitPair(size: 29),
+            const SizedBox(width: 7),
+          ],
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: isCitizen ? const Color(0xFF087F68) : Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(15),
+                  topRight: const Radius.circular(15),
+                  bottomLeft: Radius.circular(isCitizen ? 15 : 4),
+                  bottomRight: Radius.circular(isCitizen ? 4 : 15),
+                ),
+                border: isCitizen
+                    ? null
+                    : Border.all(color: const Color(0xFFE1EAE6)),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x080D2D43),
+                    blurRadius: 5,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (!isCitizen)
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 3),
+                      child: Text(
+                        'SamadhanAI Staff',
+                        style: TextStyle(
+                          color: Color(0xFF477365),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  Text(
+                    message.text,
+                    style: TextStyle(
+                      color: isCitizen ? Colors.white : _navy,
+                      fontSize: 14,
+                      height: 1.45,
+                    ),
+                  ),
+                  if (onAction != null) ...[
+                    const SizedBox(height: 5),
+                    TextButton.icon(
+                      onPressed: onAction,
+                      icon: const Icon(Icons.arrow_forward_rounded, size: 16),
+                      label: Text(message.action!),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: const Size(0, 32),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        alignment: Alignment.centerLeft,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          if (isCitizen) ...[
+            const SizedBox(width: 7),
+            const CircleAvatar(
+              radius: 14,
+              backgroundColor: Color(0xFFE8EEF8),
+              child: Icon(Icons.person_rounded, size: 18, color: _navy),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -414,6 +482,25 @@ class _HelpTopic {
   });
   final String question;
   final String answer;
+  final String? route;
+  final String? action;
+}
+
+class _ChatMessage {
+  const _ChatMessage._(
+    this.text, {
+    required this.isCitizen,
+    this.route,
+    this.action,
+  });
+
+  const _ChatMessage.bot(String text, {String? route, String? action})
+    : this._(text, isCitizen: false, route: route, action: action);
+
+  const _ChatMessage.citizen(String text) : this._(text, isCitizen: true);
+
+  final String text;
+  final bool isCitizen;
   final String? route;
   final String? action;
 }
