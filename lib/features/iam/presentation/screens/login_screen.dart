@@ -60,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final roleStr = (userProfile['role'] as String? ?? 'citizen')
           .toLowerCase();
       var role = UserRoleEnum.citizen;
-      var targetRoute = '/';
+      var targetRoute = '/citizen-dashboard';
 
       if (roleStr.contains('officer') || roleStr.contains('nodal')) {
         role = UserRoleEnum.nodalOfficer;

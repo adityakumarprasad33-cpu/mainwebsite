@@ -37,7 +37,7 @@ class BootstrapManager {
       } else if (role == UserRoleEnum.departmentAdmin) {
         targetRoute = '/admin-dashboard';
       } else {
-        targetRoute = '/';
+        targetRoute = '/citizen-dashboard';
       }
 
       return BootstrapResult(

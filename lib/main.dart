@@ -286,6 +286,10 @@ class SamadhanApp extends StatelessWidget {
               },
               child: AdminDashboardScreen(),
             ),
+            '/citizen-dashboard': (context) => ProtectedRouteGuard(
+              allowedRoles: const {UserRoleEnum.citizen},
+              child: CitizenDashboardScreen(),
+            ),
             '/admin/create-employee': (context) => ProtectedRouteGuard(
               allowedRoles: {
                 UserRoleEnum.departmentAdmin,
