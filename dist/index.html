@@ -67,6 +67,9 @@
     .preload-dot { flex: 0 0 34px; height: 34px; border-radius: 50%; }
     .preload-status { display: flex; align-items: center; gap: 9px; margin-top: 22px; color: #526a76; font-size: 13px; font-weight: 600; }
     .preload-pulse { width: 8px; height: 8px; border-radius: 50%; background: #07966b; box-shadow: 0 0 0 5px #07966b1c; }
+    .preload-error { display: none; margin-top: 18px; padding: 16px; border: 1px solid #f1c5c1; border-radius: 14px; background: #fff4f2; color: #7f2520; font-size: 14px; line-height: 1.5; }
+    .preload-error.is-visible { display: block; }
+    .preload-error button { margin-top: 12px; padding: 10px 16px; border: 0; border-radius: 9px; background: #078f68; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
     @media (max-width: 560px) {
       .preload-brand { margin-bottom: 18px; }
       .preload-hero { grid-template-columns: 1fr; gap: 12px; }
@@ -99,10 +102,32 @@
         <div class="preload-card"><div class="shimmer preload-dot"></div><div style="flex:1;display:grid;gap:8px"><div class="shimmer preload-line"></div><div class="shimmer preload-line short"></div></div></div>
         <div class="preload-card"><div class="shimmer preload-dot"></div><div style="flex:1;display:grid;gap:8px"><div class="shimmer preload-line"></div><div class="shimmer preload-line short"></div></div></div>
       </div>
-      <div class="preload-status"><span class="preload-pulse"></span>Preparing your SamadhanAI experience…</div>
+      <div class="preload-status" id="preload-status"><span class="preload-pulse"></span>Preparing your SamadhanAI experience…</div>
+      <div class="preload-error" id="preload-error" role="alert">
+        SamadhanAI could not finish loading. Check your connection and try again.
+        <div id="preload-error-detail"></div>
+        <button type="button" onclick="window.location.reload()">Try again</button>
+      </div>
     </div>
   </div>
   <script>
+    window.showAppStartupError = function (error) {
+      var status = document.getElementById('preload-status');
+      var panel = document.getElementById('preload-error');
+      var detail = document.getElementById('preload-error-detail');
+      if (status) status.style.display = 'none';
+      if (detail && error) detail.textContent = String(error).slice(0, 240);
+      if (panel) panel.classList.add('is-visible');
+      console.error('SamadhanAI startup failed:', error);
+    };
+    window.addEventListener('error', function (event) {
+      if (event.filename && /flutter_bootstrap|main\.dart|canvaskit/.test(event.filename)) {
+        window.showAppStartupError(event.message || 'A required app file could not be loaded.');
+      }
+    });
+    window.addEventListener('unhandledrejection', function (event) {
+      window.showAppStartupError(event.reason);
+    });
     window.addEventListener('flutter-first-frame', function () {
       var loader = document.getElementById('app-preloader');
       if (!loader) return;

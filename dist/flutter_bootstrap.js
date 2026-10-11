@@ -35,8 +35,19 @@ if (!window._flutter) {
 }
 _flutter.buildConfig = {"engineRevision":"425cfb54d01a9472b3e81d9e76fd63a4a44cfbcb","builds":[{"compileTarget":"dart2js","renderer":"canvaskit","mainJsPath":"main.dart.js"},{}]};
 
+
+// Load the renderer from this deployment. Depending on Google's CDN at app
+// startup can leave Flutter's canvas blank when third-party requests are blocked.
 _flutter.loader.load({
-  serviceWorkerSettings: {
-    serviceWorkerVersion: "572779938" /* Flutter's service worker is deprecated and will be removed in a future Flutter release. */
-  }
+  config: {
+    canvasKitBaseUrl: "canvaskit/",
+  },
+  onEntrypointLoaded: async function (engineInitializer) {
+    try {
+      const appRunner = await engineInitializer.initializeEngine();
+      await appRunner.runApp();
+    } catch (error) {
+      window.showAppStartupError(error);
+    }
+  },
 });
