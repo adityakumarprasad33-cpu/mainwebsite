@@ -118,7 +118,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       });
 
       unawaited(
-        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false),
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/citizen-dashboard',
+          (route) => false,
+        ),
       );
     } catch (err) {
       String msg = err.toString();

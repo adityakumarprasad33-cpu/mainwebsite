@@ -65,13 +65,9 @@ void main() async {
     await ApiClientConfig.initialize();
   }
 
-  // Keep the public web page responsive while Firebase warms up. Native
-  // entry points still wait for Firebase before opening the app.
-  if (kIsWeb) {
-    unawaited(_initializeFirebase());
-  } else {
-    await _initializeFirebase();
-  }
+  // Initialize Firebase before web route restoration so a returning user is
+  // resolved to their role dashboard instead of briefly seeing the guest site.
+  await _initializeFirebase();
 
   // Setup crash handlers
   FlutterError.onError = (FlutterErrorDetails details) {

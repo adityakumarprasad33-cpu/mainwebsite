@@ -3,6 +3,9 @@ import 'dart:ui';
 
 import 'package:citizen_app/features/website/presentation/download_release_metadata.dart';
 import 'package:citizen_app/features/website/presentation/website_staff_chat_button.dart';
+import 'package:citizen_app/platform/bootstrap/bootstrap_manager.dart';
+import 'package:citizen_app/platform/session/session_manager.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 /// Public, web-only SamadhanAI product page.
@@ -20,6 +23,8 @@ class _WebsiteLandingPageState extends State<WebsiteLandingPage> {
   final GlobalKey _faqKey = GlobalKey();
   bool _scrolled = false;
   bool _menuOpen = false;
+  bool _isAuthenticated = false;
+  StreamSubscription<User?>? _authSubscription;
 
   static const _faqs = <(String, String)>[
     (
@@ -59,7 +64,34 @@ class _WebsiteLandingPageState extends State<WebsiteLandingPage> {
   @override
   void initState() {
     super.initState();
+    _isAuthenticated = SessionManager.instance.isAuthenticated;
     _scrollController.addListener(_onScroll);
+    try {
+      _authSubscription = FirebaseAuth.instance.authStateChanges().listen((
+        user,
+      ) {
+        final next = user != null || SessionManager.instance.isAuthenticated;
+        if (mounted && next != _isAuthenticated) {
+          setState(() => _isAuthenticated = next);
+        }
+      });
+    } on FirebaseException {
+      // Firebase may be unavailable in a local public-site preview.
+    }
+  }
+
+  Future<void> _openDashboard() async {
+    setState(() => _menuOpen = false);
+    final result = await BootstrapManager.initialize();
+    if (!mounted) return;
+    if (!result.isAuthenticated) {
+      Navigator.of(context).pushNamed('/login');
+      return;
+    }
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      result.initialRoute,
+      (route) => false,
+    );
   }
 
   @override
@@ -67,6 +99,7 @@ class _WebsiteLandingPageState extends State<WebsiteLandingPage> {
     _scrollController
       ..removeListener(_onScroll)
       ..dispose();
+    unawaited(_authSubscription?.cancel());
     super.dispose();
   }
 
@@ -116,14 +149,20 @@ class _WebsiteLandingPageState extends State<WebsiteLandingPage> {
                       _HeroSection(
                         narrow: narrow,
                         scrollController: _scrollController,
-                        onStart: () => _go('/register'),
+                        onStart: _isAuthenticated
+                            ? _openDashboard
+                            : () => _go('/register'),
                         onHow: () => _go('/how-it-works'),
                       ),
                       _PublicUpdatesSection(
                         key: _updatesKey,
                         narrow: narrow,
-                        onReport: () => _go('/register'),
-                        onTrack: () => _go('/login'),
+                        onReport: _isAuthenticated
+                            ? _openDashboard
+                            : () => _go('/register'),
+                        onTrack: _isAuthenticated
+                            ? _openDashboard
+                            : () => _go('/login'),
                         onDownload: () => _go('/download'),
                       ),
                       _CapabilitiesSection(
@@ -136,8 +175,12 @@ class _WebsiteLandingPageState extends State<WebsiteLandingPage> {
                         onCapabilities: () => _scrollTo(_capabilitiesKey),
                         onFaq: () => _scrollTo(_faqKey),
                         onSignIn: () => _go('/login'),
-                        onStart: () => _go('/register'),
+                        onStart: _isAuthenticated
+                            ? _openDashboard
+                            : () => _go('/register'),
                         onDownload: () => _go('/download'),
+                        authenticated: _isAuthenticated,
+                        onDashboard: _openDashboard,
                       ),
                     ],
                   ),
@@ -161,7 +204,11 @@ class _WebsiteLandingPageState extends State<WebsiteLandingPage> {
                   onFaq: () => _scrollTo(_faqKey),
                   onSignIn: () => _go('/login'),
                   onDownload: () => _go('/download'),
-                  onStart: () => _go('/register'),
+                  onStart: _isAuthenticated
+                      ? _openDashboard
+                      : () => _go('/register'),
+                  authenticated: _isAuthenticated,
+                  onDashboard: _openDashboard,
                 ),
                 const Positioned(
                   right: 22,
@@ -205,21 +252,26 @@ class _WebsiteLandingPageState extends State<WebsiteLandingPage> {
                                 ),
                                 const Divider(height: 12),
                                 _MobileMenuItem(
-                                  label: 'Sign in',
-                                  onPressed: () => _go('/login'),
+                                  label: _isAuthenticated
+                                      ? 'Dashboard'
+                                      : 'Sign in',
+                                  onPressed: _isAuthenticated
+                                      ? _openDashboard
+                                      : () => _go('/login'),
                                 ),
-                                Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    6,
-                                    8,
-                                    6,
-                                    4,
+                                if (!_isAuthenticated)
+                                  Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                      6,
+                                      8,
+                                      6,
+                                      4,
+                                    ),
+                                    child: _PrimaryButton(
+                                      label: 'Get started',
+                                      onPressed: () => _go('/register'),
+                                    ),
                                   ),
-                                  child: _PrimaryButton(
-                                    label: 'Get started',
-                                    onPressed: () => _go('/register'),
-                                  ),
-                                ),
                               ],
                             ),
                           ),
@@ -412,6 +464,8 @@ class _NavigationBar extends StatelessWidget {
     required this.onSignIn,
     required this.onDownload,
     required this.onStart,
+    required this.authenticated,
+    required this.onDashboard,
   });
 
   final bool scrolled;
@@ -425,6 +479,8 @@ class _NavigationBar extends StatelessWidget {
   final VoidCallback onSignIn;
   final VoidCallback onDownload;
   final VoidCallback onStart;
+  final bool authenticated;
+  final VoidCallback onDashboard;
 
   @override
   Widget build(BuildContext context) => Positioned(
@@ -476,13 +532,21 @@ class _NavigationBar extends StatelessWidget {
                       _NavText('FAQ', onFaq),
                       _NavText('Download App', onDownload),
                       const SizedBox(width: 14),
-                      _TextButton(label: 'Sign In', onPressed: onSignIn),
-                      const SizedBox(width: 10),
-                      _PrimaryButton(
-                        label: 'Get Started',
-                        onPressed: onStart,
-                        compact: true,
-                      ),
+                      if (authenticated)
+                        _PrimaryButton(
+                          label: 'Dashboard',
+                          onPressed: onDashboard,
+                          compact: true,
+                        )
+                      else ...[
+                        _TextButton(label: 'Sign In', onPressed: onSignIn),
+                        const SizedBox(width: 10),
+                        _PrimaryButton(
+                          label: 'Get Started',
+                          onPressed: onStart,
+                          compact: true,
+                        ),
+                      ],
                     ] else
                       IconButton(
                         tooltip: menuOpen
@@ -2058,6 +2122,8 @@ class _Footer extends StatelessWidget {
     required this.onSignIn,
     required this.onStart,
     required this.onDownload,
+    required this.authenticated,
+    required this.onDashboard,
   });
   final VoidCallback onHow;
   final VoidCallback onCapabilities;
@@ -2065,6 +2131,8 @@ class _Footer extends StatelessWidget {
   final VoidCallback onSignIn;
   final VoidCallback onStart;
   final VoidCallback onDownload;
+  final bool authenticated;
+  final VoidCallback onDashboard;
   @override
   Widget build(BuildContext context) => Container(
     color: _LandingColors.ink,
@@ -2104,8 +2172,12 @@ class _Footer extends StatelessWidget {
                     _FooterLink('Features', onCapabilities),
                     _FooterLink('FAQ', onFaq),
                     _FooterLink('Download app', onDownload),
-                    _FooterLink('Sign in', onSignIn),
-                    _FooterLink('Get started', onStart),
+                    if (authenticated)
+                      _FooterLink('Dashboard', onDashboard)
+                    else ...[
+                      _FooterLink('Sign in', onSignIn),
+                      _FooterLink('Get started', onStart),
+                    ],
                   ],
                 );
                 return compact
@@ -2132,7 +2204,7 @@ class _Footer extends StatelessWidget {
             const Divider(color: Color(0xFF405153), height: 1),
             const SizedBox(height: 17),
             const Text(
-              '© SamadhanAI',
+              'Â© SamadhanAI',
               style: TextStyle(color: Color(0xFFBBC8C5), fontSize: 12),
             ),
           ],

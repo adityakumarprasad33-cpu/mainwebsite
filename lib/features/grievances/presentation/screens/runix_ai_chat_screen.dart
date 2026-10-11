@@ -180,7 +180,7 @@ class _RunixAiChatScreenState extends State<RunixAiChatScreen> {
                   ),
                 ),
                 Text(
-                  'Local GGUF LLM Model Active',
+                  'RunixGov AI service',
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     color: const Color(0xFF81C784),

@@ -108,6 +108,36 @@ class FirebaseService {
     return {'uid': uid, 'email': email, 'role': role.name, 'idToken': idToken};
   }
 
+  /// Rebuilds the app session from Firebase's persisted web/mobile auth state.
+  /// This is used when local session metadata is missing after a browser restart.
+  Future<bool> restoreCurrentUserSession() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return false;
+
+    final token = await user.getIdToken();
+    if (token == null || token.isEmpty) return false;
+    final email = user.email ?? '';
+    final backendUser = await _syncWithBackend(
+      uid: user.uid,
+      email: email,
+      idToken: token,
+      displayName: user.displayName,
+      phone: user.phoneNumber,
+    );
+    await SessionManager.instance.establishSession(
+      token: token,
+      id: user.uid,
+      email: email,
+      userRole: _roleFromBackend(backendUser['roleId'] as String?),
+      name: backendUser['displayName'] as String? ?? user.displayName,
+      userStateCode: backendUser['stateCode'] as String?,
+      userDistrict: backendUser['district'] as String?,
+      userPhone: backendUser['phone'] as String? ?? user.phoneNumber,
+      userPermissions: _permissionSet(backendUser['permissions']),
+    );
+    return true;
+  }
+
   Set<String> _permissionSet(dynamic value) =>
       value is List ? value.whereType<String>().toSet() : <String>{};
 

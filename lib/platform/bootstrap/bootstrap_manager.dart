@@ -1,4 +1,5 @@
 import 'package:citizen_app/platform/session/session_manager.dart';
+import 'package:citizen_app/platform/firebase/firebase_service.dart';
 import 'package:flutter/foundation.dart';
 
 /// BootstrapResult contains startup decision metadata
@@ -17,27 +18,31 @@ class BootstrapResult {
 /// BootstrapManager handles app initialization and silent session restore.
 class BootstrapManager {
   static Future<BootstrapResult> initialize() async {
-    // Keep the authenticated app shell when navigation returns to `/`.
-    // The public site also lives at `/`, so restoring from storage alone can
-    // briefly (or, on web, incorrectly) classify an already signed-in user as
-    // a visitor while they move between dashboard pages.
-    final activeSession = SessionManager.instance;
-    if (activeSession.isAuthenticated) {
+    debugPrint('[BootstrapManager] Restoring Session from Secure Storage...');
+    final session = SessionManager.instance;
+    if (session.isAuthenticated) {
       return BootstrapResult(
         isAuthenticated: true,
-        role: activeSession.role,
-        initialRoute: _dashboardRoute(activeSession.role),
+        role: session.role,
+        initialRoute: dashboardRouteFor(session.role),
       );
     }
 
-    debugPrint('[BootstrapManager] Restoring Session from Secure Storage...');
-    bool isAuthenticated = false;
+    var isAuthenticated = false;
     try {
-      isAuthenticated = await SessionManager.instance.restoreSession();
+      isAuthenticated = await session.restoreSession();
     } catch (e, stack) {
       debugPrint('[BootstrapManager] Session restore failed: $e');
       debugPrint('[BootstrapManager] Stack: $stack');
-      isAuthenticated = false;
+    }
+    if (!isAuthenticated) {
+      try {
+        isAuthenticated = await FirebaseService.instance
+            .restoreCurrentUserSession();
+      } catch (e, stack) {
+        debugPrint('[BootstrapManager] Firebase restore failed: $e');
+        debugPrint('[BootstrapManager] Stack: $stack');
+      }
     }
 
     if (isAuthenticated) {
@@ -47,7 +52,7 @@ class BootstrapManager {
       return BootstrapResult(
         isAuthenticated: true,
         role: role,
-        initialRoute: _dashboardRoute(role),
+        initialRoute: dashboardRouteFor(role),
       );
     }
 
@@ -61,7 +66,7 @@ class BootstrapManager {
     );
   }
 
-  static String _dashboardRoute(UserRoleEnum role) {
+  static String dashboardRouteFor(UserRoleEnum role) {
     switch (role) {
       case UserRoleEnum.nodalOfficer:
         return '/officer-dashboard';
