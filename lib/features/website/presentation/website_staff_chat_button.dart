@@ -189,6 +189,7 @@ class _CitizenHelpDialogState extends State<_CitizenHelpDialog> {
   ];
 
   final _scrollController = ScrollController();
+  final _inputController = TextEditingController();
   final List<_ChatMessage> _messages = [
     const _ChatMessage.bot(
       'Namaste! Welcome to SamadhanAI help. Choose a question below and I’ll show you a preset answer.',
@@ -207,6 +208,133 @@ class _CitizenHelpDialogState extends State<_CitizenHelpDialog> {
           ),
         );
     });
+    _scrollToLatest();
+  }
+
+  void _sendTypedQuestion() {
+    final question = _inputController.text.trim();
+    if (question.isEmpty) return;
+
+    _inputController.clear();
+    if (_containsPrivateData(question)) {
+      setState(() {
+        _messages.add(
+          const _ChatMessage.bot(
+            'Please don’t share personal or confidential details here, including passwords, OTPs, API keys, tokens, phone numbers, email addresses, identity numbers, or private report details. That message was not sent or saved. Ask a general SamadhanAI question instead.',
+          ),
+        );
+      });
+      _scrollToLatest();
+      return;
+    }
+
+    final topic = _findTopic(question);
+    setState(() {
+      _messages
+        ..add(_ChatMessage.citizen(question))
+        ..add(
+          _ChatMessage.bot(
+            topic?.answer ??
+                'I can answer general questions about reporting an issue, tracking a report, privacy, app availability, and using SamadhanAI. Try one of the suggested questions below.',
+            route: topic?.route,
+            action: topic?.action,
+          ),
+        );
+    });
+    _scrollToLatest();
+  }
+
+  _HelpTopic? _findTopic(String question) {
+    final normalized = question
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9 ]'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    const keywords = <List<String>>[
+      ['samadhanai', 'what is', 'about the service', 'what does it do'],
+      [
+        'password',
+        'passcode',
+        'otp',
+        'one time code',
+        'api key',
+        'token',
+        'credential',
+        'secret',
+      ],
+      ['report', 'submit', 'complaint', 'grievance', 'civic issue', 'lodge'],
+      ['details', 'photo', 'picture', 'location', 'evidence', 'attach'],
+      ['track', 'tracking', 'status', 'progress', 'my report', 'follow up'],
+      [
+        'department',
+        'government',
+        'automatically sent',
+        'assigned',
+        'forwarded',
+      ],
+      [
+        'response time',
+        'when will',
+        'how long',
+        'reply',
+        'hear back',
+        'status update',
+      ],
+      ['ai', 'artificial intelligence', 'classify', 'suggest wording'],
+      [
+        'access my account',
+        'access my report',
+        'see my data',
+        'account lookup',
+        'personal data',
+      ],
+      ['save', 'saved', 'store', 'stored', 'privacy', 'chat history'],
+      ['android', 'download app', 'apk', 'android app'],
+      ['iphone', 'ios', 'apple app'],
+      ['emergency', 'urgent', 'immediate danger'],
+      [
+        'retrieve my password',
+        'staff get my password',
+        'staff access credentials',
+      ],
+    ];
+    var bestScore = 0;
+    _HelpTopic? bestTopic;
+    for (var i = 0; i < _topics.length; i++) {
+      for (final keyword in keywords[i]) {
+        if (normalized.contains(keyword)) {
+          final score = keyword.length;
+          if (score > bestScore) {
+            bestScore = score;
+            bestTopic = _topics[i];
+          }
+        }
+      }
+    }
+    return bestTopic;
+  }
+
+  bool _containsPrivateData(String text) {
+    final patterns = <RegExp>[
+      RegExp(r'\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b', caseSensitive: false),
+      RegExp(r'(?:\+?91[\s-]?)?[6-9]\d{9}\b'),
+      RegExp(r'\b\d{4}[ -]?\d{4}[ -]?\d{4}\b'),
+      RegExp(r'\b(?:my\s+)?password\s*(?:is|:|=)\s*\S+', caseSensitive: false),
+      RegExp(
+        r'\b(?:otp|one[\s-]?time code|verification code)\s*(?:is|:|=)?\s*\d{4,8}\b',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'\b(?:api[\s_-]*key|access[\s_-]*token|secret|private[\s_-]*key)\s*(?:is|:|=)?\s+\S+',
+        caseSensitive: false,
+      ),
+      RegExp(r'\bAIza[0-9A-Za-z_-]{20,}\b'),
+      RegExp(r'\bsk-[0-9A-Za-z_-]{20,}\b'),
+    ];
+    return patterns.any((pattern) => pattern.hasMatch(text));
+  }
+
+  void _scrollToLatest() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -221,13 +349,15 @@ class _CitizenHelpDialogState extends State<_CitizenHelpDialog> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _inputController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final panelHeight = (MediaQuery.sizeOf(context).height - 36)
-        .clamp(430.0, 700.0)
+    final media = MediaQuery.of(context);
+    final panelHeight = (media.size.height - media.viewInsets.bottom - 36)
+        .clamp(180.0, 700.0)
         .toDouble();
     return Dialog(
       insetPadding: const EdgeInsets.all(12),
@@ -336,13 +466,23 @@ class _CitizenHelpDialogState extends State<_CitizenHelpDialog> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Choose a question',
-          style: TextStyle(
-            color: _navy,
-            fontSize: 13,
-            fontWeight: FontWeight.w800,
-          ),
+        Row(
+          children: [
+            const Icon(
+              Icons.lightbulb_outline_rounded,
+              size: 16,
+              color: _green,
+            ),
+            const SizedBox(width: 5),
+            const Text(
+              'Suggested questions',
+              style: TextStyle(
+                color: _navy,
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 7),
         SizedBox(
@@ -368,6 +508,57 @@ class _CitizenHelpDialogState extends State<_CitizenHelpDialog> {
               );
             },
           ),
+        ),
+        const SizedBox(height: 9),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _inputController,
+                maxLength: 240,
+                textInputAction: TextInputAction.send,
+                onSubmitted: (_) => _sendTypedQuestion(),
+                decoration: InputDecoration(
+                  counterText: '',
+                  hintText: 'Type a general question…',
+                  hintStyle: const TextStyle(
+                    color: Color(0xFF72828C),
+                    fontSize: 13,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 13,
+                    vertical: 12,
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(22),
+                    borderSide: const BorderSide(color: Color(0xFFDCE8E3)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(22),
+                    borderSide: const BorderSide(color: Color(0xFFDCE8E3)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(22),
+                    borderSide: const BorderSide(color: _green, width: 1.5),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 7),
+            IconButton.filled(
+              tooltip: 'Send question',
+              onPressed: _sendTypedQuestion,
+              style: IconButton.styleFrom(backgroundColor: _green),
+              icon: const Icon(Icons.send_rounded),
+            ),
+          ],
+        ),
+        const SizedBox(height: 5),
+        const Text(
+          'Answers come from preset FAQs. Messages stay in this page and are not saved or sent.',
+          style: TextStyle(color: Color(0xFF72828C), fontSize: 10.5),
         ),
       ],
     ),

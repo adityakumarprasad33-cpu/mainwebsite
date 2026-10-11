@@ -140,7 +140,7 @@ void main() {
   });
 
   testWidgets(
-    'staff chat shows citizen and preset staff messages without free text',
+    'staff chat answers typed questions with presets and blocks credentials',
     (
       tester,
     ) async {
@@ -157,20 +157,22 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.text('Choose a question'), findsOneWidget);
-      expect(find.byType(TextField), findsNothing);
-      await tester.drag(find.byType(ListView).last, const Offset(-480, 0));
+      final input = find.byType(TextField);
+      expect(input, findsOneWidget);
+      await tester.enterText(input, 'How can I report a civic issue?');
+      await tester.tap(find.byTooltip('Send question'));
       await tester.pumpAndSettle();
-      await tester.tap(
-        find.text('Should I enter passwords, OTPs, or API keys here?'),
-      );
+      expect(find.text('How can I report a civic issue?'), findsOneWidget);
+      expect(find.textContaining('Choose “Report an Issue”'), findsOneWidget);
+
+      await tester.enterText(input, 'My password is example12345');
+      await tester.tap(find.byTooltip('Send question'));
       await tester.pumpAndSettle();
+      expect(find.text('My password is example12345'), findsNothing);
       expect(
-        find.text('Should I enter passwords, OTPs, or API keys here?'),
-        findsWidgets,
+        find.textContaining('That message was not sent or saved'),
+        findsOneWidget,
       );
-      expect(find.textContaining('Never share passwords'), findsOneWidget);
-      expect(find.text('SamadhanAI Staff'), findsWidgets);
       expect(tester.takeException(), isNull);
       tester.view.resetPhysicalSize();
       tester.view.resetDevicePixelRatio();
