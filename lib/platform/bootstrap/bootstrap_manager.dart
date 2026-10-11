@@ -17,6 +17,19 @@ class BootstrapResult {
 /// BootstrapManager handles app initialization and silent session restore.
 class BootstrapManager {
   static Future<BootstrapResult> initialize() async {
+    // Keep the authenticated app shell when navigation returns to `/`.
+    // The public site also lives at `/`, so restoring from storage alone can
+    // briefly (or, on web, incorrectly) classify an already signed-in user as
+    // a visitor while they move between dashboard pages.
+    final activeSession = SessionManager.instance;
+    if (activeSession.isAuthenticated) {
+      return BootstrapResult(
+        isAuthenticated: true,
+        role: activeSession.role,
+        initialRoute: _dashboardRoute(activeSession.role),
+      );
+    }
+
     debugPrint('[BootstrapManager] Restoring Session from Secure Storage...');
     bool isAuthenticated = false;
     try {
@@ -31,19 +44,10 @@ class BootstrapManager {
       final role = SessionManager.instance.role;
       debugPrint('[BootstrapManager] Session Restored cleanly. Role: $role');
 
-      var targetRoute = '/';
-      if (role == UserRoleEnum.nodalOfficer) {
-        targetRoute = '/officer-dashboard';
-      } else if (role == UserRoleEnum.departmentAdmin) {
-        targetRoute = '/admin-dashboard';
-      } else {
-        targetRoute = '/citizen-dashboard';
-      }
-
       return BootstrapResult(
         isAuthenticated: true,
         role: role,
-        initialRoute: targetRoute,
+        initialRoute: _dashboardRoute(role),
       );
     }
 
@@ -55,5 +59,17 @@ class BootstrapManager {
       role: UserRoleEnum.citizen,
       initialRoute: '/login',
     );
+  }
+
+  static String _dashboardRoute(UserRoleEnum role) {
+    switch (role) {
+      case UserRoleEnum.nodalOfficer:
+        return '/officer-dashboard';
+      case UserRoleEnum.departmentAdmin:
+      case UserRoleEnum.superAdmin:
+        return '/admin-dashboard';
+      case UserRoleEnum.citizen:
+        return '/citizen-dashboard';
+    }
   }
 }
